@@ -12,7 +12,7 @@ db_config = {
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('dashboard.html')
 
 @app.route('/status')
 def status():
