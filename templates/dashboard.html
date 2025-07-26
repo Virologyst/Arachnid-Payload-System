@@ -1,29 +1,35 @@
 <!DOCTYPE html>
+
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>EGH455 Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-</head>
-<script>
-document.getElementById("updateBtn").addEventListener("click", function() {
-    // Show loading spinner
-    document.getElementById("loading").style.display = "block";
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const updateBtn = document.getElementById("updateBtn");
+            updateBtn.addEventListener("click", function() {
+                // Show loading spinner
+                document.getElementById("loading").style.display = "block";
 
-    // Disable the button to prevent double clicks
-    document.getElementById("updateBtn").disabled = true;
+                // Disable the button to prevent double clicks
+                updateBtn.disabled = true;
 
-    // Fire AJAX call to /update
-    fetch("/update", { method: "POST" })
-        .then(() => {
-            // Wait a second or two for the Pi to restart the service
-            setTimeout(() => {
-                window.location.reload();
-            }, 5000); // 5 second delay for safety
+                fetch("/update", { method: "POST" })
+                    .then(() => {
+                        // Wait for the Pi to restart the service
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 5000); // 5s
+                    });
+            });
         });
-});
-</script>
+    </script>
+
+</head>
+
 <body>
     <header>
         <h1>EGH455 Dashboard</h1>
