@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title if title else "EGH455 Dashboard" }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        nav {
+            background: #333;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+        }
+        nav a:hover {
+            background: #555;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('dashboard') }}">🏠 Dashboard</a>
+        <a href="{{ url_for('live_video') }}">🎥 Live Video</a>
+        <a href="{{ url_for('air_quality') }}">🌡 Air Quality</a>
+        <a href="{{ url_for('targets') }}">🎯 Targets</a>
+        <a href="{{ url_for('logs') }}">📜 Logs</a>
+        <a href="{{ url_for('system') }}">⚙ System</a>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
