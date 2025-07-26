@@ -6,6 +6,24 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
 </head>
+<script>
+document.getElementById("updateBtn").addEventListener("click", function() {
+    // Show loading spinner
+    document.getElementById("loading").style.display = "block";
+
+    // Disable the button to prevent double clicks
+    document.getElementById("updateBtn").disabled = true;
+
+    // Fire AJAX call to /update
+    fetch("/update", { method: "POST" })
+        .then(() => {
+            // Wait a second or two for the Pi to restart the service
+            setTimeout(() => {
+                window.location.reload();
+            }, 5000); // 5 second delay for safety
+        });
+});
+</script>
 <body>
     <header>
         <h1>EGH455 Dashboard</h1>
@@ -62,11 +80,19 @@
                     </div>
                 </div>
             </div>
-            <form action="/update" method="POST" style="display:inline;">
-                <button type="submit" style="background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer;">
-                    Update
-                </button>
-            </form>
+<!--            <form action="/update" method="POST" style="display:inline;">-->
+<!--                <button type="submit" style="background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer;">-->
+<!--                    Update-->
+<!--                </button>-->
+<!--            </form>-->
+
+            <button id="updateBtn" style="background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer;">
+                🔄 Update & Restart
+            </button>
+            <div id="loading" style="display:none; margin-top: 10px;">
+                <img src="/static/loading.gif" alt="Loading..." style="width: 50px;">
+                <p>Updating... please wait</p>
+            </div>
 
             <form action="/restart" method="POST" style="display:inline; margin-left:10px;">
                 <button type="submit" style="background: #f44336; color: white; padding: 10px; border: none; cursor: pointer;">
