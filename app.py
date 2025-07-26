@@ -2,6 +2,8 @@ import subprocess
 from flask import Flask, render_template, redirect, url_for, jsonify
 import mysql.connector
 import sqlite3
+import subprocess
+import threading
 
 app = Flask(__name__)
 DB_PATH = 'database/egh455.db'
@@ -52,12 +54,21 @@ def status():
 #     subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
 #     return redirect(url_for("dashboard"))
 
-@app.route("/update", methods=["POST"])
-def update():
-    # Pull latest code from GitHub
+def do_update():
     subprocess.run(["/usr/bin/git", "pull"], cwd="/home/egh455/EGH455")
-    # Restart the systemd service to load new code
     subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
+
+@app.route("/update", methods=["POST"])
+# def update():
+#     # Pull latest code from GitHub
+#     subprocess.run(["/usr/bin/git", "pull"], cwd="/home/egh455/EGH455")
+#     # Restart the systemd service to load new code
+#     subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
+#     return jsonify({"status": "ok"})
+
+def update():
+    # spawn the update in a new thread so Flask can return immediately
+    threading.Thread(target=do_update).start()
     return jsonify({"status": "ok"})
 
 
