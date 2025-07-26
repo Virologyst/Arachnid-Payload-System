@@ -99,3 +99,99 @@ main {
     text-align: center;
     margin-top: 5px;
 }
+
+/* Base layout */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+header {
+    background: #333;
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+
+/* Two-column split */
+main {
+    display: flex;
+    flex: 1;
+}
+
+/* Left: Camera feed area */
+.camera-pane {
+    flex: 2;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 2px solid #ccc;
+}
+
+.camera-pane img,
+.camera-pane video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Right: Dynamic panel */
+.panel-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #f5f5f5;
+}
+
+/* Tab buttons */
+.tab-buttons {
+    display: flex;
+    justify-content: space-around;
+    background: #444;
+    padding: 10px;
+}
+
+.tab-buttons button {
+    background: #666;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.tab-buttons button:hover {
+    background: #888;
+}
+
+/* Panel content area */
+#dynamicPanel {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+/* Camera pane always maintains aspect ratio */
+.camera-pane {
+    flex: 2;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 2px solid #ccc;
+    overflow: hidden; /* hides overflow if any */
+}
+
+.camera-pane img,
+.camera-pane video {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain; /* ensures it never distorts */
+    background-color: #000; /* letterbox padding if needed */
+}

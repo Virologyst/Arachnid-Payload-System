@@ -1,5 +1,11 @@
 import subprocess
-from flask import Flask, render_template, redirect, url_for, jsonify
+from flask import (
+    Flask,
+    render_template,
+    redirect,
+    url_for,
+    jsonify,
+    render_template_string)
 import mysql.connector
 import sqlite3
 import subprocess
@@ -15,26 +21,15 @@ db_config = {
     'database': 'pi_data'
 }
 
-@app.route('/')
+def do_update():
+    # Pull latest code from GitHub
+    subprocess.run(["/usr/bin/git", "pull"], cwd="/home/egh455/EGH455")
+    # Restart the systemd service to load new code
+    subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
 
+@app.route('/')
 def home():
     return render_template('dashboard.html')
-
-# def dashboard():
-#     conn = sqlite3.connect(DB_PATH)
-#     conn.row_factory = sqlite3.Row
-#     cursor = conn.cursor()
-#
-#     cursor.execute("""
-#         SELECT target, co2_ppm, temperature_c, humidity_percent
-#         FROM sensor_data
-#         ORDER BY target
-#     """)
-#     sensor_rows = cursor.fetchall()
-#
-#     conn.close()
-#
-#     return render_template("dashboard.html", sensors=sensor_rows)
 
 @app.route('/status')
 def status():
@@ -46,37 +41,46 @@ def status():
     conn.close()
     return render_template('status.html', status_data=results)
 
-# @app.route("/update", methods=["POST"])
-# def update():
-#     # Pull latest code from GitHub
-#     subprocess.run(["/usr/bin/git", "pull"], cwd="/home/egh455/EGH455")
-#     # Restart the systemd service to load new code
-#     subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
-#     return redirect(url_for("dashboard"))
-
-def do_update():
-    subprocess.run(["/usr/bin/git", "pull"], cwd="/home/egh455/EGH455")
-    subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
-
 @app.route("/update", methods=["POST"])
-# def update():
-#     # Pull latest code from GitHub
-#     subprocess.run(["/usr/bin/git", "pull"], cwd="/home/egh455/EGH455")
-#     # Restart the systemd service to load new code
-#     subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
-#     return jsonify({"status": "ok"})
-
 def update():
     # spawn the update in a new thread so Flask can return immediately
     threading.Thread(target=do_update).start()
     return jsonify({"status": "ok"})
-
 
 @app.route("/restart", methods=["POST"])
 def restart():
     # Restart the systemd service manually
     subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
     return redirect(url_for("dashboard"))
+
+# Fake data for dashboard
+
+@app.route("/panel/<view>")
+def panel_content(view):
+    if view == "sensors":
+        return render_template_string("""
+            <h2>Sensor Data</h2>
+            <p>Temperature: 22.3°C</p>
+            <p>Humidity: 14%</p>
+            <p>CO₂: 380 ppm</p>
+        """)
+    elif view == "logs":
+        return render_template_string("""
+            <h2>Logs</h2>
+            <p>(System logs will be displayed here)</p>
+        """)
+    elif view == "targets":
+        return render_template_string("""
+            <h2>Targets</h2>
+            <p>No targets detected yet.</p>
+        """)
+    elif view == "system":
+        return render_template_string("""
+            <h2>System Controls</h2>
+            <button onclick="fetch('/update', {method:'POST'})">🔄 Update & Restart</button>
+        """)
+    else:
+        return "Invalid panel", 404
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
