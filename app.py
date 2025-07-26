@@ -1,5 +1,5 @@
 import subprocess
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, jsonify
 import mysql.connector
 import sqlite3
 
@@ -44,13 +44,19 @@ def status():
     conn.close()
     return render_template('status.html', status_data=results)
 
+# @app.route("/update", methods=["POST"])
+# def update():
+#     # Pull latest code from GitHub
+#     subprocess.run(["/usr/bin/git", "pull"], cwd="/home/egh455/EGH455")
+#     # Restart the systemd service to load new code
+#     subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
+#     return redirect(url_for("dashboard"))
+
 @app.route("/update", methods=["POST"])
 def update():
-    # Pull latest code from GitHub
     subprocess.run(["/usr/bin/git", "pull"], cwd="/home/egh455/EGH455")
-    # Restart the systemd service to load new code
     subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
-    return redirect(url_for("dashboard"))
+    return jsonify({"status": "ok"})
 
 
 @app.route("/restart", methods=["POST"])
