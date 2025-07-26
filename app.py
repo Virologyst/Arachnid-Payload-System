@@ -49,14 +49,14 @@ def update():
     # Pull latest code from GitHub
     subprocess.run(["git", "pull"], cwd="/home/egh455/EGH455")
     # Restart the systemd service to load new code
-    subprocess.run(["sudo", "systemctl", "restart", "egh455.service"])
+    subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
     return redirect(url_for("dashboard"))
 
 
 @app.route("/restart", methods=["POST"])
 def restart():
     # Restart the systemd service manually
-    subprocess.run(["sudo", "systemctl", "restart", "egh455.service"])
+    subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
     return redirect(url_for("dashboard"))
 
 if __name__ == '__main__':
