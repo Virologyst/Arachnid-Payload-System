@@ -54,7 +54,9 @@ def status():
 
 @app.route("/update", methods=["POST"])
 def update():
+    # Pull latest code from GitHub
     subprocess.run(["/usr/bin/git", "pull"], cwd="/home/egh455/EGH455")
+    # Restart the systemd service to load new code
     subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
     return jsonify({"status": "ok"})
 
