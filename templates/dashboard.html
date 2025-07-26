@@ -89,6 +89,7 @@ document.getElementById("updateBtn").addEventListener("click", function() {
             <button id="updateBtn" style="background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer;">
                 🔄 Update & Restart
             </button>
+
             <div id="loading" style="display:none; margin-top: 10px;">
                 <img src="/static/loading.gif" alt="Loading..." style="width: 50px;">
                 <p>Updating... please wait</p>
@@ -96,9 +97,10 @@ document.getElementById("updateBtn").addEventListener("click", function() {
 
             <form action="/restart" method="POST" style="display:inline; margin-left:10px;">
                 <button type="submit" style="background: #f44336; color: white; padding: 10px; border: none; cursor: pointer;">
-                    Restart
+                    Restart Device
                 </button>
             </form>
+
         </div>
     </main>
 </body>
