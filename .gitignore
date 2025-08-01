@@ -1,8 +1,16 @@
+# Python
+.venv
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.env
-venv/
-.idea/
+
+# Node
+node_modules/
+.svelte-kit/
+build/
+
+# Misc
 .DS_Store
+
+interface/node_modules/
+interface/.svelt-kit/
+interface/build/
+
