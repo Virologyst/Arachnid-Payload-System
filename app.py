@@ -43,31 +43,41 @@ def serve_static_files(path):
     return send_from_directory(app.static_folder, path)
 
 # --- Update Route ---
+# @app.route("/update", methods=["POST"])
+# def update():
+#     try:
+#         repo_dir = "/home/egh455-g5/EGH455"
+#         svelte_dir = os.path.join(repo_dir, "interface")
+#         static_dir = os.path.join(repo_dir, "static")
+#
+#         # 1️⃣ Pull latest code
+#         subprocess.run(["git", "pull"], cwd=repo_dir, check=True)
+#
+#         # 2️⃣ Install Svelte deps (if new packages were added)
+#         subprocess.run(["npm", "install"], cwd=svelte_dir, check=True)
+#
+#         # 3️⃣ Build Svelte
+#         subprocess.run(["npm", "run", "build"], cwd=svelte_dir, check=True)
+#
+#         # 4️⃣ Copy build to Flask static folder
+#         subprocess.run(["cp", "-r", "build/.", static_dir], cwd=svelte_dir, check=True)
+#
+#         # 5️⃣ Restart the service
+#         subprocess.run(["sudo", "systemctl", "restart", "egh455.service"], check=True)
+#
+#         return jsonify({"status": "ok", "message": "Update complete"})
+#     except subprocess.CalledProcessError as e:
+#         return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route("/update", methods=["POST"])
 def update():
     try:
-        repo_dir = "/home/egh455-g5/EGH455"
-        svelte_dir = os.path.join(repo_dir, "interface")
-        static_dir = os.path.join(repo_dir, "static")
-
-        # 1️⃣ Pull latest code
-        subprocess.run(["git", "pull"], cwd=repo_dir, check=True)
-
-        # 2️⃣ Install Svelte deps (if new packages were added)
-        subprocess.run(["npm", "install"], cwd=svelte_dir, check=True)
-
-        # 3️⃣ Build Svelte
-        subprocess.run(["npm", "run", "build"], cwd=svelte_dir, check=True)
-
-        # 4️⃣ Copy build to Flask static folder
-        subprocess.run(["cp", "-r", "build/.", static_dir], cwd=svelte_dir, check=True)
-
-        # 5️⃣ Restart the service
-        subprocess.run(["sudo", "systemctl", "restart", "egh455.service"], check=True)
-
-        return jsonify({"status": "ok", "message": "Update complete"})
+        # Run the deploy script
+        subprocess.run(["deploy"], check=True)
+        return jsonify({"status": "ok", "message": "Deployment triggered"})
     except subprocess.CalledProcessError as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route('/status')
 def status():

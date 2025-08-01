@@ -28,27 +28,27 @@
             });
         </script>
 
-            <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const panel = document.getElementById("dynamicPanel");
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const panel = document.getElementById("dynamicPanel");
 
-            function loadPanel(view) {
-                fetch(`/panel/${view}`)
-                    .then(r => r.text())
-                    .then(html => {
-                        panel.innerHTML = html;
-                    });
-            }
+                function loadPanel(view) {
+                    fetch(`/panel/${view}`)
+                        .then(r => r.text())
+                        .then(html => {
+                            panel.innerHTML = html;
+                        });
+                }
 
-            // Attach listeners for each tab
-            document.getElementById("btnSensors").addEventListener("click", () => loadPanel('sensors'));
-            document.getElementById("btnLogs").addEventListener("click", () => loadPanel('logs'));
-            document.getElementById("btnTargets").addEventListener("click", () => loadPanel('targets'));
-            document.getElementById("btnSystem").addEventListener("click", () => loadPanel('system'));
+                // Attach listeners for each tab
+                document.getElementById("btnSensors").addEventListener("click", () => loadPanel('sensors'));
+                document.getElementById("btnLogs").addEventListener("click", () => loadPanel('logs'));
+                document.getElementById("btnTargets").addEventListener("click", () => loadPanel('targets'));
+                document.getElementById("btnSystem").addEventListener("click", () => loadPanel('system'));
 
-            // Load default view on page load
-            loadPanel('sensors');
-        });
+                // Load default view on page load
+                loadPanel('sensors');
+            });
         </script>
 
 </head>
