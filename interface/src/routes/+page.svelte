@@ -55,16 +55,16 @@
 
 <main>
     <div class="sidebar">
-        <img src="../../images/thumb1.jpg" alt="Thumbnail">
-        <img src="../../images/thumb1.jpg" alt="Thumbnail">
-        <img src="../../images/thumb1.jpg" alt="Thumbnail">
+        <img src="images/thumb1.jpg" alt="Thumbnail">
+        <img src="images/thumb1.jpg" alt="Thumbnail">
+        <img src="images/thumb1.jpg" alt="Thumbnail">
     </div>
 
     <div class="content">
         <div class="top-row">
             <!-- Left: Camera -->
             <div class="camera-pane">
-                <img src="../../images/mars.jpg" alt="Live Camera Feed">
+                <img src="images/mars.jpg" alt="Live Camera Feed">
             </div>
 
             <!-- Right: Dynamic Panel -->
@@ -120,7 +120,7 @@
 
         {#if loading}
             <div id="loading" style="margin-top: 10px;">
-                <img src="../../images/loading.gif" alt="Loading..." style="width: 50px;">
+                <img src="images/loading.gif" alt="Loading..." style="width: 50px;">
                 <p>Updating... please wait</p>
             </div>
         {/if}
