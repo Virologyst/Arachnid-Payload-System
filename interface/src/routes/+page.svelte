@@ -30,7 +30,7 @@
 
 <style>
     /* You can keep most of your old CSS in static/style.css and import it */
-    @import '/style.css';
+    @import '../../style.css';
 
     .camera-pane img {
         width: 100%;
