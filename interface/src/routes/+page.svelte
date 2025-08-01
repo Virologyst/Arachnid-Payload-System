@@ -55,9 +55,9 @@
 
 <main>
     <div class="sidebar">
-        <img src="../../images/thumb1.jpg" alt="Thumbnail 1">
-        <img src="../../images/thumb1.jpg" alt="Thumbnail 2">
-        <img src="../../images/thumb1.jpg" alt="Thumbnail 3">
+        <img src="../../images/thumb1.jpg" alt="Thumbnail">
+        <img src="../../images/thumb1.jpg" alt="Thumbnail">
+        <img src="../../images/thumb1.jpg" alt="Thumbnail">
     </div>
 
     <div class="content">
@@ -120,7 +120,7 @@
 
         {#if loading}
             <div id="loading" style="margin-top: 10px;">
-                <img src="/loading.gif" alt="Loading..." style="width: 50px;">
+                <img src="../../images/loading.gif" alt="Loading..." style="width: 50px;">
                 <p>Updating... please wait</p>
             </div>
         {/if}
