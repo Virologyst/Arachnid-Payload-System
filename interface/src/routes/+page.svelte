@@ -76,21 +76,26 @@
                     <button on:click={() => loadPanel('system')}>⚙ System</button>
                 </div>
 
-                <div id="dynamicPanel" bind:this={dynamicPanel}>
-                    {@html panelContent}
-                </div>
+<!--                <div id="dynamicPanel" bind:this={dynamicPanel}>-->
+<!--                    {@html panelContent}-->
+<!--                </div>-->
             </div>
         </div>
 
         <div class="bottom-row">
             <div class="readings-table">
                 <table border="1" cellpadding="5">
-                    <tr><th>Targets</th><th>Average Readings</th></tr>
-                    <tr><td>A:</td><td>- - -</td></tr>
-                    <tr><td>B:</td><td>380 ppm, 22.3°C, 14%</td></tr>
-                    <tr><td>C:</td><td>- - -</td></tr>
+                    <thead>
+                        <tr><th>Targets</th><th>Average Readings</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>A:</td><td>- - -</td></tr>
+                        <tr><td>B:</td><td>380 ppm, 22.3°C, 14%</td></tr>
+                        <tr><td>C:</td><td>- - -</td></tr>
+                    </tbody>
                 </table>
             </div>
+
 
             <div class="status-bars">
                 <div>
