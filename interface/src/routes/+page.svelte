@@ -55,16 +55,16 @@
 
 <main>
     <div class="sidebar">
-        <img src="/thumb1.jpg" alt="Thumbnail 1">
-        <img src="/thumb1.jpg" alt="Thumbnail 2">
-        <img src="/thumb1.jpg" alt="Thumbnail 3">
+        <img src="../../images/thumb1.jpg" alt="Thumbnail 1">
+        <img src="../../images/thumb1.jpg" alt="Thumbnail 2">
+        <img src="../../images/thumb1.jpg" alt="Thumbnail 3">
     </div>
 
     <div class="content">
         <div class="top-row">
             <!-- Left: Camera -->
             <div class="camera-pane">
-                <img src="/mars.jpg" alt="Live Camera Feed">
+                <img src="../../images/mars.jpg" alt="Live Camera Feed">
             </div>
 
             <!-- Right: Dynamic Panel -->
