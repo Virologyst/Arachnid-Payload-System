@@ -190,7 +190,7 @@ main {
 .camera-pane video {
     max-width: 100%;
     max-height: 100%;
-    width: auto;
+    width: 80%;
     height: auto;
     object-fit: contain; /* ensures it never distorts */
     background-color: #000; /* letterbox padding if needed */
