@@ -1,33 +1,3 @@
-<!--<script>-->
-<!--    import { onMount } from 'svelte';-->
-
-<!--    let loading = false;-->
-
-<!--    function updateDevice() {-->
-<!--        loading = true;-->
-<!--        fetch('/update', { method: 'POST' })-->
-<!--            .then(() => {-->
-<!--                setTimeout(() => {-->
-<!--                    loading = false;-->
-<!--                    window.location.reload();-->
-<!--                }, 5000);-->
-<!--            });-->
-<!--    }-->
-
-<!--    let currentView = 'sensors';-->
-<!--    let panelContent = '';-->
-
-<!--    async function loadPanel(view) {-->
-<!--        currentView = view;-->
-<!--        const res = await fetch(`/panel/${view}`);-->
-<!--        panelContent = await res.text();-->
-<!--    }-->
-
-<!--    onMount(() => {-->
-<!--        loadPanel('sensors'); // default panel-->
-<!--    });-->
-<!--</script>-->
-
 <script>
     import { onMount } from 'svelte';
 
@@ -35,7 +5,7 @@
     let panelContent = '';
     let currentView = 'sensors';
 
-    // 🔄 Deploy/update function
+    // Deploy/update function
     async function updateDevice() {
         loading = true;
         await fetch('/update', { method: 'POST' });
@@ -45,38 +15,39 @@
         }, 5000);
     }
 
-    // 📂 Load dashboard panel dynamically
+    // Load dashboard panel dynamically
     async function loadPanel(view) {
         currentView = view;
         const res = await fetch(`/panel/${view}`);
         panelContent = await res.text();
     }
 
-    // 🏁 Load default tab on page load
+    // Load default tab on page load
     onMount(() => {
         loadPanel('sensors');
     });
 </script>
 
 <style>
-    /* You can keep most of your old CSS in static/style.css and import it */
+
     @import '../../style.css';
 
-    .camera-pane img {
-        width: 100%;
-        height: auto;
-        max-height: 400px;
-        object-fit: contain;
-    }
+    /*.camera-pane img {*/
+    /*    width: 100%;*/
+    /*    height: auto;*/
+    /*    max-height: 400px;*/
+    /*    object-fit: contain;*/
+    /*}*/
 
-    .tab-buttons button {
-        margin-right: 5px;
-        padding: 8px 12px;
-        border: none;
-        cursor: pointer;
-        background: #333;
-        color: white;
-    }
+    /*.tab-buttons button {*/
+    /*    margin-right: 5px;*/
+    /*    padding: 8px 12px;*/
+    /*    border: none;*/
+    /*    cursor: pointer;*/
+    /*    background: #333;*/
+    /*    color: white;*/
+    /*}*/
+
 </style>
 
 <header>
@@ -92,13 +63,13 @@
 
     <div class="content">
         <div class="top-row">
-            <!-- 🎥 Live Camera Feed -->
+            <!-- Live Camera Feed -->
             <div class="camera-pane">
                 <h2>Live Camera</h2>
                 <img src="/video_feed" alt="Live Feed">
             </div>
 
-            <!-- Right: Dynamic Panel -->
+            <!-- Dynamic Panel -->
             <div class="panel-pane">
                 <div class="tab-buttons">
                     <button on:click={() => loadPanel('sensors')}>📊 Sensors</button>
