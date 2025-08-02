@@ -1,30 +1,60 @@
+<!--<script>-->
+<!--    import { onMount } from 'svelte';-->
+
+<!--    let loading = false;-->
+
+<!--    function updateDevice() {-->
+<!--        loading = true;-->
+<!--        fetch('/update', { method: 'POST' })-->
+<!--            .then(() => {-->
+<!--                setTimeout(() => {-->
+<!--                    loading = false;-->
+<!--                    window.location.reload();-->
+<!--                }, 5000);-->
+<!--            });-->
+<!--    }-->
+
+<!--    let currentView = 'sensors';-->
+<!--    let panelContent = '';-->
+
+<!--    async function loadPanel(view) {-->
+<!--        currentView = view;-->
+<!--        const res = await fetch(`/panel/${view}`);-->
+<!--        panelContent = await res.text();-->
+<!--    }-->
+
+<!--    onMount(() => {-->
+<!--        loadPanel('sensors'); // default panel-->
+<!--    });-->
+<!--</script>-->
+
 <script>
     import { onMount } from 'svelte';
 
     let loading = false;
+    let panelContent = '';
+    let currentView = 'sensors';
 
-    function updateDevice() {
+    // 🔄 Deploy/update function
+    async function updateDevice() {
         loading = true;
-        fetch('/update', { method: 'POST' })
-            .then(() => {
-                setTimeout(() => {
-                    loading = false;
-                    window.location.reload();
-                }, 5000);
-            });
+        await fetch('/update', { method: 'POST' });
+        setTimeout(() => {
+            loading = false;
+            window.location.reload();
+        }, 5000);
     }
 
-    let currentView = 'sensors';
-    let panelContent = '';
-
+    // 📂 Load dashboard panel dynamically
     async function loadPanel(view) {
         currentView = view;
         const res = await fetch(`/panel/${view}`);
         panelContent = await res.text();
     }
 
+    // 🏁 Load default tab on page load
     onMount(() => {
-        loadPanel('sensors'); // default panel
+        loadPanel('sensors');
     });
 </script>
 
@@ -62,9 +92,10 @@
 
     <div class="content">
         <div class="top-row">
-            <!-- Left: Camera -->
+            <!-- 🎥 Live Camera Feed -->
             <div class="camera-pane">
-                <img src="images/mars.jpg" alt="Live Camera Feed">
+                <h2>Live Camera</h2>
+                <img src="/video_feed" alt="Live Feed">
             </div>
 
             <!-- Right: Dynamic Panel -->
