@@ -65,7 +65,6 @@
         <div class="top-row">
             <!-- Live Camera Feed -->
             <div class="camera-pane">
-                <h2>Live Camera</h2>
                 <img src="/video_feed" alt="Live Feed">
             </div>
 
