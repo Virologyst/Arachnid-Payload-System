@@ -195,3 +195,19 @@ main {
     object-fit: contain; /* ensures it never distorts */
     background-color: #000; /* letterbox padding if needed */
 }
+
+/*.camera-pane img {*/
+/*    width: 100%;*/
+/*    height: auto;*/
+/*    max-height: 400px;*/
+/*    object-fit: contain;*/
+/*}*/
+
+.tab-buttons button {
+    margin-right: 5px;
+    padding: 8px 12px;
+    border: none;
+    cursor: pointer;
+    background: #333;
+    color: white;
+}
