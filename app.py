@@ -3,19 +3,20 @@ import cv2
 import depthai as dai
 import subprocess
 import mysql.connector
-# import os
-# import sqlite3
-# import subprocess
-# import threading
+import smbus2
+import time
+
 from flask import (
     Flask, Response, jsonify,
-    send_from_directory, render_template_string, render_template
+    send_from_directory, render_template_string
 )
+
+# --- Enviro+ sensors ---
 from enviroplus import gas
-import bme280
-import ltr559
-import time
-import smbus2
+# import bme280
+from bme280 import BME280
+from ltr559 import LTR559
+# import ltr559
 
 # ──────────────── FLASK APP ────────────────
 app = Flask(__name__, static_folder="static", static_url_path="")
@@ -33,38 +34,49 @@ pipeline = dai.Pipeline()
 
 camRgb = pipeline.create(dai.node.ColorCamera)
 camRgb.setBoardSocket(dai.CameraBoardSocket.CAM_A)
-camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_720_P)
+camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
 camRgb.setInterleaved(False)
 
 xoutRgb = pipeline.create(dai.node.XLinkOut)
 xoutRgb.setStreamName("rgb")
 camRgb.video.link(xoutRgb.input)
 
-device = dai.Device(pipeline)
-qRgb = device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
+def init_depthai():
+    for i in range(10):
+        try:
+            device = dai.Device(pipeline)
+            print("Camera initialized.")
+            return device, device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
+        except RuntimeError as e:
+            print(f"DepthAI init failed (attempt {i+1}): {e}")
+            time.sleep(5)
+    print("Camera failed after retries. Running without camera.")
+    return None, None
+
 
 def gen_frames():
     """Generate MJPEG frames from DepthAI."""
-    while True:
-        inRgb = qRgb.get()
-        frame = inRgb.getCvFrame()
-        ret, buffer = cv2.imencode('.jpg', frame)
-        if not ret:
-            continue
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+    if qRgb is None:
+        while True:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + b'' + b'\r\n')
+    else:
+        while True:
+            inRgb = qRgb.get()
+            frame = inRgb.getCvFrame()
+            ret, buffer = cv2.imencode('.jpg', frame)
+            if not ret:
+                continue
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
-# def do_update():
-#     # Pull latest code from GitHub
-#     subprocess.run(["/usr/bin/git", "pull"], cwd="/home/egh455/EGH455")
-#     # Restart the systemd service to load new code
-#     subprocess.run(["/usr/bin/sudo", "systemctl", "restart", "egh455.service"])
+# ──────────────── Camera and ENVIRO+ SENSOR SETUP ────────────────
+bus = smbus2.SMBus(1)
+ltr559 = LTR559()
+bme280_sensor = BME280(i2c_dev=bus)
+device, qRgb = init_depthai()
 
 # ──────────────── ROUTES ────────────────
-
-# --- ENVIRONMENT SENSOR SETUP ---
-bus = smbus2.SMBus(1)
-bme280_data = bme280.sample(bus, 0x76)  # 0x76 is default BME280 I2C address
 
 @app.route("/")
 def serve_index():
@@ -84,32 +96,34 @@ def video_feed():
 
 @app.route('/enviro')
 def get_enviro_data():
-    # Get temperature, pressure, humidity
-    bme280_data = bme280.sample(bus, 0x76)
-    temperature = round(bme280_data.temperature, 1)
-    pressure = round(bme280_data.pressure, 1)
-    humidity = round(bme280_data.humidity, 1)
+    """Read Enviro+ and return JSON."""
+    try:
+        # ✅ Correct Pimoroni calls
+        temperature = round(bme280_sensor.get_temperature(), 1)
+        pressure = round(bme280_sensor.get_pressure(), 1)
+        humidity = round(bme280_sensor.get_humidity(), 1)
 
-    # Get gas readings
-    gas_readings = gas.read_all()
-    oxidising = round(gas_readings.oxidising / 1000, 3)   # kΩ
-    reducing = round(gas_readings.reducing / 1000, 3)
-    nh3 = round(gas_readings.nh3 / 1000, 3)
+        gas_readings = gas.read_all()
+        oxidising = round(gas_readings.oxidising / 1000, 3)   # kΩ
+        reducing = round(gas_readings.reducing / 1000, 3)
+        nh3 = round(gas_readings.nh3 / 1000, 3)
 
-    # Get light/proximity
-    lux = ltr559.get_lux()
-    prox = ltr559.get_proximity()
+        lux = ltr559.get_lux()
+        prox = ltr559.get_proximity()
 
-    return jsonify({
-        "temperature": temperature,
-        "pressure": pressure,
-        "humidity": humidity,
-        "oxidising": oxidising,
-        "reducing": reducing,
-        "nh3": nh3,
-        "lux": lux,
-        "proximity": prox
-    })
+        return jsonify({
+            "temperature": temperature,
+            "pressure": pressure,
+            "humidity": humidity,
+            "oxidising": oxidising,
+            "reducing": reducing,
+            "nh3": nh3,
+            "lux": lux,
+            "proximity": prox
+        })
+    except Exception as e:
+        app.logger.error(f"Enviro read failed: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/update", methods=["POST"])
 def update():
@@ -129,53 +143,56 @@ def status():
     results = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template('status.html', status_data=results)
+    return render_template_string("<h1>Status Table</h1>" + str(results))
 
 @app.route("/panel/<view>")
 def panel_content(view):
     """Dynamic panel content loader for dashboard tabs."""
     if view == "sensors":
-        # Read Enviro+ sensor values
-        bme280_data = bme280.sample(bus, 0x76)
-        temperature = round(bme280_data.temperature, 1)
-        pressure = round(bme280_data.pressure, 1)
-        humidity = round(bme280_data.humidity, 1)
+        try:
+            temperature = round(bme280_sensor.get_temperature(), 1)
+            humidity = round(bme280_sensor.get_humidity(), 1)
+            pressure = round(bme280_sensor.get_pressure(), 1)
 
-        gas_readings = gas.read_all()
-        oxidising = round(gas_readings.oxidising / 1000, 3)   # kΩ
-        reducing = round(gas_readings.reducing / 1000, 3)
-        nh3 = round(gas_readings.nh3 / 1000, 3)
+            gas_readings = gas.read_all()
+            oxidising = round(gas_readings.oxidising / 1000, 3)
+            reducing = round(gas_readings.reducing / 1000, 3)
+            nh3 = round(gas_readings.nh3 / 1000, 3)
 
-        lux = ltr559.get_lux()
-        prox = ltr559.get_proximity()
+            lux = ltr559.get_lux()
+            prox = ltr559.get_proximity()
 
-        return render_template_string(f"""
-            <h2>📊 Sensor Data (Live)</h2>
-            <ul>
-                <li><b>Temperature:</b> {temperature} °C</li>
-                <li><b>Humidity:</b> {humidity} %</li>
-                <li><b>Pressure:</b> {pressure} hPa</li>
-                <li><b>Oxidising Gas:</b> {oxidising} kΩ</li>
-                <li><b>Reducing Gas:</b> {reducing} kΩ</li>
-                <li><b>Ammonia (NH₃):</b> {nh3} kΩ</li>
-                <li><b>Light:</b> {lux} lux</li>
-                <li><b>Proximity:</b> {prox}</li>
-            </ul>
-        """)
+            # ✅ wrap in a container div so Svelte always sees valid HTML
+            html = f"""
+                <div class="panel-sensors">
+                    <h2>Sensor Data (Snapshot)</h2>
+                    <ul>
+                        <li>🌡 Temperature: {temperature} °C</li>
+                        <li>💧 Humidity: {humidity} %</li>
+                        <li>📈 Pressure: {pressure} hPa</li>
+                        <li>🟠 Oxidising Gas: {oxidising} kΩ</li>
+                        <li>🔵 Reducing Gas: {reducing} kΩ</li>
+                        <li>🟢 NH3: {nh3} kΩ</li>
+                        <li>💡 Light: {lux} lux</li>
+                        <li>📏 Proximity: {prox}</li>
+                    </ul>
+                </div>
+            """
+            return render_template_string(html)
+        except Exception as e:
+            app.logger.error(f"Panel sensor read failed: {e}")
+            return render_template_string(f"<div class='panel-error'>⚠️ Sensor Error: {e}</div>")
+
     elif view == "logs":
-        return render_template_string("""
-            <h2>Logs</h2>
-            <p>(System logs will be displayed here)</p>
-        """)
+        return render_template_string("<div><h2>Logs</h2><p>(System logs will be displayed here)</p></div>")
     elif view == "targets":
-        return render_template_string("""
-            <h2>Targets</h2>
-            <p>No targets detected yet.</p>
-        """)
+        return render_template_string("<div><h2>Targets</h2><p>No targets detected yet.</p></div>")
     elif view == "system":
         return render_template_string("""
-            <h2>System Controls</h2>
-            <button onclick="fetch('/update', {method:'POST'})">🔄 Update & Restart</button>
+            <div>
+                <h2>System Controls</h2>
+                <button onclick="fetch('/update', {method:'POST'})">🔄 Update & Restart</button>
+            </div>
         """)
     else:
         return "Invalid panel", 404
