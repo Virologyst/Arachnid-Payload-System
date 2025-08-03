@@ -205,6 +205,26 @@ main {
 /*    object-fit: contain;*/
 /*}*/
 
+.panel-sensors {
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.panel-sensors h2 {
+    margin-top: 0;
+    font-size: 18px;
+}
+.panel-sensors ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.panel-sensors li {
+    padding: 4px 0;
+    font-size: 14px;
+}
+
 .tab-buttons button {
     margin-right: 5px;
     padding: 8px 12px;
@@ -212,4 +232,10 @@ main {
     cursor: pointer;
     background: #333;
     color: white;
+}
+
+/* === DEBUGGING === */
+
+#dynamicPanel {
+    border: 2px dashed red;
 }
