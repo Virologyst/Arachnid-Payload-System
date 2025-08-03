@@ -40,22 +40,6 @@
 
     @import '../../style.css';
 
-    /*.camera-pane img {*/
-    /*    width: 100%;*/
-    /*    height: auto;*/
-    /*    max-height: 400px;*/
-    /*    object-fit: contain;*/
-    /*}*/
-
-    /*.tab-buttons button {*/
-    /*    margin-right: 5px;*/
-    /*    padding: 8px 12px;*/
-    /*    border: none;*/
-    /*    cursor: pointer;*/
-    /*    background: #333;*/
-    /*    color: white;*/
-    /*}*/
-
 </style>
 
 <header>
@@ -85,23 +69,23 @@
                     <button on:click={() => loadPanel('system')}>⚙ System</button>
                 </div>
 
-<!--                <div id="dynamicPanel" bind:this={dynamicPanel}>-->
-<!--                    {@html panelContent}-->
-<!--                </div>-->
+                <div id="dynamicPanel" bind:this={dynamicPanel}>
+                    {@html panelContent}
+                </div>
 
-<!--                <div class="enviro-card">-->
-<!--                    <h2>Enviro+ Live Data</h2>-->
-<!--                    <ul>-->
-<!--                        <li>Temp: {enviro.temperature} °C</li>-->
-<!--                        <li>Humidity: {enviro.humidity} %</li>-->
-<!--                        <li>Pressure: {enviro.pressure} hPa</li>-->
-<!--                        <li>Oxidising: {enviro.oxidising} kΩ</li>-->
-<!--                        <li>Reducing: {enviro.reducing} kΩ</li>-->
-<!--                        <li>Ammonia: {enviro.nh3} kΩ</li>-->
-<!--                        <li>Light: {enviro.lux} lux</li>-->
-<!--                        <li>Proximity: {enviro.proximity}</li>-->
-<!--                    </ul>-->
-<!--                </div>-->
+                <div class="enviro-card">
+                    <h2>Enviro+ Live Data</h2>
+                    <ul>
+                        <li>Temp: {enviro.temperature} °C</li>
+                        <li>Humidity: {enviro.humidity} %</li>
+                        <li>Pressure: {enviro.pressure} hPa</li>
+                        <li>Oxidising: {enviro.oxidising} kΩ</li>
+                        <li>Reducing: {enviro.reducing} kΩ</li>
+                        <li>Ammonia: {enviro.nh3} kΩ</li>
+                        <li>Light: {enviro.lux} lux</li>
+                        <li>Proximity: {enviro.proximity}</li>
+                    </ul>
+                </div>
 
             </div>
         </div>
