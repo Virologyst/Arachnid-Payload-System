@@ -4,6 +4,12 @@
     let loading = false;
     let panelContent = '';
     let currentView = 'sensors';
+    let enviro = {};
+
+    async function fetchEnviro() {
+        const res = await fetch('/api/enviro');
+        enviro = await res.json();
+    }
 
     // Deploy/update function
     async function updateDevice() {
@@ -25,6 +31,8 @@
     // Load default tab on page load
     onMount(() => {
         loadPanel('sensors');
+        fetchEnviro();
+        setInterval(fetchEnviro, 4000);  // refresh every 4 seconds
     });
 </script>
 
@@ -71,7 +79,7 @@
             <!-- Dynamic Panel -->
             <div class="panel-pane">
                 <div class="tab-buttons">
-                    <button on:click={() => loadPanel('sensors')}>📊 Sensors</button>
+                    <button on:click={() => loadPanel('sensors')}>📊 Sensor Data</button>
                     <button on:click={() => loadPanel('logs')}>📜 Logs</button>
                     <button on:click={() => loadPanel('targets')}>🎯 Targets</button>
                     <button on:click={() => loadPanel('system')}>⚙ System</button>
@@ -80,10 +88,26 @@
 <!--                <div id="dynamicPanel" bind:this={dynamicPanel}>-->
 <!--                    {@html panelContent}-->
 <!--                </div>-->
+
+<!--                <div class="enviro-card">-->
+<!--                    <h2>Enviro+ Live Data</h2>-->
+<!--                    <ul>-->
+<!--                        <li>Temp: {enviro.temperature} °C</li>-->
+<!--                        <li>Humidity: {enviro.humidity} %</li>-->
+<!--                        <li>Pressure: {enviro.pressure} hPa</li>-->
+<!--                        <li>Oxidising: {enviro.oxidising} kΩ</li>-->
+<!--                        <li>Reducing: {enviro.reducing} kΩ</li>-->
+<!--                        <li>Ammonia: {enviro.nh3} kΩ</li>-->
+<!--                        <li>Light: {enviro.lux} lux</li>-->
+<!--                        <li>Proximity: {enviro.proximity}</li>-->
+<!--                    </ul>-->
+<!--                </div>-->
+
             </div>
         </div>
 
         <div class="bottom-row">
+
             <div class="readings-table">
                 <table border="1" cellpadding="5">
                     <thead>
