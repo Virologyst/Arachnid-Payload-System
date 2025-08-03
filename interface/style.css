@@ -194,8 +194,8 @@ main {
     max-height: 100%;
     width: 95%;
     height: auto;
-    object-fit: contain; /* ensures it never distorts */
-    background-color: #000; /* letterbox padding if needed */
+    object-fit: contain;
+    background-color: #000;
 }
 
 /*.camera-pane img {*/
