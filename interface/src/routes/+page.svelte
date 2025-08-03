@@ -7,7 +7,7 @@
     let enviro = {};
 
     async function fetchEnviro() {
-        const res = await fetch('/api/enviro');
+        const res = await fetch('/enviro');
         enviro = await res.json();
     }
 
