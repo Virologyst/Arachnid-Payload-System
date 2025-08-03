@@ -48,9 +48,9 @@
     <h1>EGH455 - Team 5</h1>
 
     <nav>
-        <button>📺 Dashboard</button>
-        <button>📸 Images</button>
-        <button>📊 Sensor Data</button>
+        <button>Dashboard</button>
+        <button>Images</button>
+        <button>Sensor Data</button>
     </nav>
 
     <!-- HAMBURGER ICON -->
@@ -122,7 +122,7 @@
                     </thead>
                     <tbody>
                         <tr><td>A:</td><td>- - -</td></tr>
-                        <tr><td>B:</td><td>380 ppm, 22.3°C, 14%</td></tr>
+                        <tr><td>B:</td><td></td></tr>
                         <tr><td>C:</td><td>- - -</td></tr>
                     </tbody>
                 </table>
