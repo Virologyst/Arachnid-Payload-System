@@ -9,8 +9,8 @@ body {
 /* === HEADER === */
 header {
     display: flex;
-    /*align-items: center;*/
-    /*justify-content: space-between;*/
+    align-items: center;
+    justify-content: space-between;
     background: rgba(0, 32, 64, 0.8); /* transparent dark blue */
     padding: 5px 20px;
     position: fixed;
@@ -20,8 +20,8 @@ header {
 }
 
 .logo-link img.logo {
-    width: 50px;
-    height: 50px;
+    width: 70px;
+    height: 70px;
     /*border-radius: 50%;*/
     transition: transform 0.2s ease;
 }
