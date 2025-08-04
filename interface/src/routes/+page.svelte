@@ -155,32 +155,33 @@
 <!--        <div>Logs</div>-->
 <!--    </div>-->
 
-<header class="navbar">
-  <div class="logo-container">
-    <a href="/" class="logo-link">
-      <img src="logo.png" alt="Home" class="logo">
-    </a>
-    <h1 style="margin-left: 25px">EGH455: Advanced System Design - Group 5</h1>
-  </div>
+<!--<header class="navbar">-->
 
-  <div class="nav">
-<!--    <button on:click={() => loadPanel('sensors')}>Dashboard</button>-->
-<!--    <button on:click={() => loadPanel('images')}>Images</button>-->
-    <a href="/" class="nav-btn">Dashboard</a>
-    <a href="/images" class="nav-btn">Images</a>
-</div>
+<!--  <div class="logo-container">-->
+<!--    <a href="/" class="logo-link">-->
+<!--      <img src="logo.png" alt="Home" class="logo">-->
+<!--    </a>-->
+<!--    <h1 style="margin-left: 25px">EGH455: Advanced System Design - Group 5</h1>-->
+<!--  </div>-->
 
-    <div class="hamburger" on:click={toggleMobileMenu}>
-      ☰
-    </div>
+<!--  <div class="nav">-->
+<!--&lt;!&ndash;    <button on:click={() => loadPanel('sensors')}>Dashboard</button>&ndash;&gt;-->
+<!--&lt;!&ndash;    <button on:click={() => loadPanel('images')}>Images</button>&ndash;&gt;-->
+<!--    <a href="/" class="nav-btn">Dashboard</a>-->
+<!--    <a href="/images" class="nav-btn">Images</a>-->
+<!--</div>-->
 
-    <div class={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
-      <a href="/" class="mobile-btn">Dashboard</a>
-      <a href="/images" class="mobile-btn">Images</a>
-      <a href="/logs" class="mobile-btn">Logs</a>
-    </div>
+<!--    <div class="hamburger" on:click={toggleMobileMenu}>-->
+<!--      ☰-->
+<!--    </div>-->
 
-</header>
+<!--    <div class={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>-->
+<!--      <a href="/" class="mobile-btn">Dashboard</a>-->
+<!--      <a href="/images" class="mobile-btn">Images</a>-->
+<!--      <a href="/logs" class="mobile-btn">Logs</a>-->
+<!--    </div>-->
+
+<!--</header>-->
 
 
 <main>

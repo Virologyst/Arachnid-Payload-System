@@ -86,7 +86,7 @@
     }
 </style>
 
-<h1 style="text-align: center; margin-top: 20px;">🖼 Image Gallery</h1>
+<h1 style="text-align: center; margin-top: 20px;">Image Gallery</h1>
 
 <div class="gallery">
     {#each thumbnails as img}
