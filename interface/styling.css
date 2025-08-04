@@ -86,28 +86,55 @@ header h1 {
 /*  gap: 1rem;*/
 /*}*/
 
-.nav button {
+/*.nav button {*/
+/*    background: #001F3F;*/
+/*    color: white;*/
+/*    padding: 10px 15px;*/
+/*    border: none;*/
+/*    max-height: 50px;*/
+/*    border-radius: 12px;*/
+/*    cursor: pointer;*/
+/*    transition: background 0.2s ease, transform 0.1s ease;*/
+/*}*/
+
+/*.nav button:hover {*/
+/*    background: #004080;*/
+/*    transform: translateY(-2px);*/
+/*}*/
+
+.nav-btn, .mobile-btn {
     background: #001F3F;
     color: white;
     padding: 10px 15px;
-    border: none;
-    max-height: 50px;
     border-radius: 12px;
-    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.nav button:hover {
+.nav-btn:hover, .mobile-btn:hover {
     background: #004080;
     transform: translateY(-2px);
 }
 
+.mobile-btn {
+    font-size: 1.5rem;
+    padding: 10px;
+}
+
 /* === HAMBURGER MENU === */
+/*.hamburger {*/
+/*    display: none; !* shown only on mobile *!*/
+/*    flex-direction: column;*/
+/*    gap: 5px;*/
+/*    cursor: pointer;*/
+/*}*/
+
 .hamburger {
-    display: none; /* shown only on mobile */
-    flex-direction: column;
-    gap: 5px;
+    font-size: 24px;
     cursor: pointer;
+    display: none;
+    margin-left: auto;
 }
 
 .hamburger div {
@@ -146,11 +173,11 @@ header h1 {
     font-size: 1.5rem;
 }
 
-.hamburger {
-  font-size: 24px;
-  cursor: pointer;
-  display: none;
-}
+/*.hamburger {*/
+/*  font-size: 24px;*/
+/*  cursor: pointer;*/
+/*  display: none;*/
+/*}*/
 
 /* === MAIN LAYOUT === */
 main {

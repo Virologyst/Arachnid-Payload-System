@@ -165,9 +165,27 @@
   </div>
 
   <div class="nav">
-    <button on:click={() => loadPanel('sensors')}>Dashboard</button>
-    <button on:click={() => loadPanel('images')}>Images</button>
+<!--    <button on:click={() => loadPanel('sensors')}>Dashboard</button>-->
+<!--    <button on:click={() => loadPanel('images')}>Images</button>-->
+        <a href="/" class="nav-btn">Dashboard</a>
+  <a href="/images" class="nav-btn">Images</a>
   </div>
+
+    <div class="hamburger" on:click={toggleMobileMenu}>
+      ☰
+    </div>
+
+    <div class={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
+      <a href="/" class="mobile-btn">📊 Dashboard</a>
+      <a href="/images" class="mobile-btn">📸 Images</a>
+      <a href="/logs" class="mobile-btn">📜 Logs</a>
+    <!--  <button on:click={() => { loadPanel('sensors'); mobileMenuOpen = false; }}>📊 Dashboard</button>-->
+    <!--  <button on:click={() => { loadPanel('images'); mobileMenuOpen = false; }}>📸 Images</button>-->
+    <!--  <button on:click={() => { loadPanel('logs'); mobileMenuOpen = false; }}>📜 Logs</button>-->
+    </div>
+
+
+
 </header>
 
 
@@ -178,15 +196,7 @@
 <!--    <button on:click={() => mobileMenuOpen = false}>📊 Sensor Data</button>-->
 <!--</div>-->
 
-<div class="hamburger" on:click={toggleMobileMenu}>
-  ☰
-</div>
 
-<div class={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
-  <button on:click={() => { loadPanel('sensors'); mobileMenuOpen = false; }}>📊 Dashboard</button>
-  <button on:click={() => { loadPanel('images'); mobileMenuOpen = false; }}>📸 Images</button>
-  <button on:click={() => { loadPanel('logs'); mobileMenuOpen = false; }}>📜 Logs</button>
-</div>
 
 <main>
 
