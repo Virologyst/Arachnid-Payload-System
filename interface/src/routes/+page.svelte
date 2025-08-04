@@ -138,7 +138,7 @@
 
 <header>
     <a href="/" class="logo-link">
-        <img src="images/logo.png" alt="Home" class="logo">
+        <img src="logo.png" alt="Home" class="logo">
     </a>
     <h1>EGH455: Advanced System Design - Group 5</h1>
 
