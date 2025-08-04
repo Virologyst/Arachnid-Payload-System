@@ -247,14 +247,14 @@ main {
     padding: 10px;
 }
 
-.status-bars {
-    flex: 1;
-    display: flex;
-    justify-content: space-around;
-    align-items: flex-end;
-    padding: 10px;
-    background: transparent;
-}
+/*.status-bars {*/
+/*    flex: 1;*/
+/*    display: flex;*/
+/*    justify-content: space-around;*/
+/*    align-items: flex-end;*/
+/*    padding: 10px;*/
+/*    background: transparent;*/
+/*}*/
 
 .bar {
     width: 50px;
@@ -312,7 +312,7 @@ main {
     justify-content: space-around;
     align-items: flex-end;
     padding: 10px;
-    background: #1a1a1a;
+    background: transparent;
     border-radius: 10px;
     margin: 10px;
 }
