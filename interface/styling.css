@@ -335,10 +335,10 @@ main {
 .capture-overlay {
     position: absolute;
     bottom: 5px;
-    right: 5px;
+    /*right: 5px;*/
     width: 100%;
     display: flex;
-    justify-content: center;
+    justify-content: right;
     pointer-events: none;
 }
 
