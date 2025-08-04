@@ -137,11 +137,9 @@
 
 </style>
 
-<h1 style="text-align: center; margin-top: 20px;">Dashboard</h1>
+<h1 style="text-align: center; margin-top: 120px;">Dashboard</h1>
 
 <main>
-
-
 
     <div class="sidebar">
 <!--        <button class="capture-btn" on:click={captureImage}>Capture Image</button>-->
