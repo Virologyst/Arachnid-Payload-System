@@ -155,10 +155,11 @@
 <!--        <div>Live Camera</div>-->
 <!--        <div>Logs</div>-->
 <!--    </div>-->
+
     <header class="navbar">
       <div class="logo-container">
         <a href="/" class="logo-link">
-          <img src="/static/images/logo.png" alt="Home" class="logo">
+          <img src="/static/logo.png" alt="Home" class="logo">
         </a>
         <h1>EGH455: Advanced System Design - Group 5</h1>
       </div>
@@ -268,7 +269,7 @@
 
                             {#if loading}
                                 <div id="loading">
-                                    <img src="images/loading.gif" alt="Loading..." style="width: 50px;">
+                                    <img src="static/loading.gif" alt="Loading..." style="width: 50px;">
                                     <p>Updating... please wait</p>
                                 </div>
                             {/if}
