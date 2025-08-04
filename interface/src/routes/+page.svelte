@@ -159,9 +159,9 @@
     <header class="navbar">
       <div class="logo-container">
         <a href="/" class="logo-link">
-          <img src="/static/logo.png" alt="Home" class="logo">
+          <img src="logo.png" alt="Home" class="logo">
         </a>
-        <h1>EGH455: Advanced System Design - Group 5</h1>
+        <h1 style="margin-left: 25px">EGH455: Advanced System Design - Group 5</h1>
       </div>
 
       <div class="nav-links">
@@ -269,7 +269,7 @@
 
                             {#if loading}
                                 <div id="loading">
-                                    <img src="static/loading.gif" alt="Loading..." style="width: 50px;">
+                                    <img src="loading.gif" alt="Loading..." style="width: 50px;">
                                     <p>Updating... please wait</p>
                                 </div>
                             {/if}
