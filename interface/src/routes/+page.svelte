@@ -14,7 +14,7 @@
     function log(message, type = 'INFO') {
         const timestamp = new Date().toLocaleTimeString();
         logs = [{ timestamp, message, type }, ...logs].slice(0, MAX_LOGS);
-        console.log(`[${type}] ${message}`);  // ✅ still visible in browser console too
+        console.log(`[${type}] ${message}`);
     }
 
     let historicData = [];
@@ -384,7 +384,7 @@
                 <div class="modal-content">
                     <img src={modalImage} alt="Full Image">
                     <button class="delete-btn" on:click={() => deleteImage(modalImage.split('/').pop())}>🗑 Delete</button>
-                    <button class="close-btn" on:click={() => modalImage = null}>❌ Close</button>
+                    <button class="close-btn" on:click={() => modalImage = null}>Close</button>
                 </div>
             </div>
             {/if}
