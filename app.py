@@ -85,12 +85,12 @@ app.logger.setLevel(logging.INFO)
 
 
 # ──────────────── FLASK APP ────────────────
-app = Flask(__name__, static_folder="static", static_url_path="")
-DB_PATH = 'database/egh455.db'
-IMAGE_DIR = "/home/egh455-g5/DCIM"
+# app = Flask(__name__, static_folder="static", static_url_path="")
+# DB_PATH = 'database/egh455.db'
+# IMAGE_DIR = "/home/egh455-g5/DCIM"
 
-if not os.path.exists(IMAGE_DIR):
-    os.makedirs(IMAGE_DIR)
+
+# ──────────────── DATABASE SETUP ────────────────
 
 db_config = {
     'host': 'localhost',
@@ -100,6 +100,10 @@ db_config = {
 }
 
 # ──────────────── DEPTHAI CAMERA ────────────────
+
+if not os.path.exists(IMAGE_DIR):
+    os.makedirs(IMAGE_DIR)
+
 pipeline = dai.Pipeline()
 
 camRgb = pipeline.create(dai.node.ColorCamera)
