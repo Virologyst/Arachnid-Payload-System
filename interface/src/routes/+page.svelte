@@ -220,13 +220,34 @@
                             </ul>
                         </div>
                     {:else if currentView === 'logs'}
-                        <div><h2>Logs</h2><p>(System logs will be displayed here)</p></div>
+                        <div class="logs-panel">
+                            <h2>📜 Live Logs</h2>
+                            <div class="log-feed">
+                                {#each logs as logItem}
+                                    <div class="log-entry {logItem.type.toLowerCase()}">
+                                        <span class="log-time">[{logItem.timestamp}]</span>
+                                        <span class="log-type">[{logItem.type}]</span>
+                                        <span class="log-msg">{logItem.message}</span>
+                                    </div>
+                                {/each}
+                            </div>
+                        </div>
                     {:else if currentView === 'targets'}
                         <div><h2>Targets</h2><p>No targets detected yet.</p></div>
                     {:else if currentView === 'system'}
                         <div>
                             <h2>System Controls</h2>
-                            <button on:click={updateDevice}>🔄 Update & Restart</button>
+<!--                            <button on:click={updateDevice}>🔄 Update & Restart</button>-->
+                            <button on:click={updateDevice} disabled={loading} class="update-btn">
+                                🔄 Update & Restart
+                            </button>
+
+                            {#if loading}
+                                <div id="loading">
+                                    <img src="images/loading.gif" alt="Loading..." style="width: 50px;">
+                                    <p>Updating... please wait</p>
+                                </div>
+                            {/if}
                         </div>
                     {/if}
                 </div>
@@ -275,18 +296,18 @@
 <!--                    />-->
 <!--                </div>-->
 
-                <div class="logs-panel">
-                    <h2>📜 Live Logs</h2>
-                    <div class="log-feed">
-                        {#each logs as logItem}
-                            <div class="log-entry {logItem.type.toLowerCase()}">
-                                <span class="log-time">[{logItem.timestamp}]</span>
-                                <span class="log-type">[{logItem.type}]</span>
-                                <span class="log-msg">{logItem.message}</span>
-                            </div>
-                        {/each}
-                    </div>
-                </div>
+<!--                <div class="logs-panel">-->
+<!--                    <h2>📜 Live Logs</h2>-->
+<!--                    <div class="log-feed">-->
+<!--                        {#each logs as logItem}-->
+<!--                            <div class="log-entry {logItem.type.toLowerCase()}">-->
+<!--                                <span class="log-time">[{logItem.timestamp}]</span>-->
+<!--                                <span class="log-type">[{logItem.type}]</span>-->
+<!--                                <span class="log-msg">{logItem.message}</span>-->
+<!--                            </div>-->
+<!--                        {/each}-->
+<!--                    </div>-->
+<!--                </div>-->
 
                 <div class="enviro-card">
                     <h2>Enviro+ Live Data</h2>
@@ -301,6 +322,7 @@
                         <li>Proximity: {enviro.proximity}</li>
                     </ul>
                 </div>
+
             </div>
         </div>
 
