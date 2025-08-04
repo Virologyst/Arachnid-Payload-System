@@ -92,7 +92,7 @@
 
     	.modal {
 		position: fixed;
-		top: 0; left: 0;
+		top: 50px; left: 0;
 		width: 100%; height: 100%;
 		background: rgba(0, 0, 0, 0.8);
 		display: flex;
@@ -104,8 +104,8 @@
 		background: #1d2e5a;
 		padding: 20px;
 		border-radius: 12px;
-		max-width: 90%;
-		max-height: 90%;
+		max-width: 80%;
+		max-height: 80%;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -136,6 +136,7 @@
             src={`/images/${img}`}
             alt={img}
             class="thumb"
+            on:click={() => openModal(img)}
             on:contextmenu={(e) => openContextMenu(e, img)}
         />
     {/each}
