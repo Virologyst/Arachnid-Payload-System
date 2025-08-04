@@ -17,9 +17,12 @@
         console.log(`[${type}] ${message}`);  // ✅ still visible in browser console too
     }
 
-    import {
-        AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-    } from 'recharts';
+    import { Line } from 'svelte-chartjs';
+    import Chart from 'chart.js/auto';
+
+    // import {
+    //     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+    // } from 'recharts';
 
     let historicData = [];
 
@@ -206,30 +209,46 @@
 
                 <div class="sensor-graph">
                     <h3>Historic Sensor Data</h3>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <AreaChart data={historicData}>
-                            <defs>
-                                <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#ff7300" stopOpacity={0.8}/>
-                                    <stop offset="95%" stopColor="#ff7300" stopOpacity={0}/>
-                                </linearGradient>
-                                <linearGradient id="humidityGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#00c3ff" stopOpacity={0.8}/>
-                                    <stop offset="95%" stopColor="#00c3ff" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="timestamp" tick={{ fontSize: 10 }} />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-
-                            <Area type="monotone" dataKey="temperature" stroke="#ff7300" fill="url(#tempGradient)" />
-                            <Area type="monotone" dataKey="humidity" stroke="#00c3ff" fill="url(#humidityGradient)" />
-                            <Area type="monotone" dataKey="pressure" stroke="#8884d8" fillOpacity={0.2} />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                    <Line
+                        data={{
+                            labels: historicData.map(d => new Date(d.timestamp).toLocaleTimeString()),
+                            datasets: [
+                                {
+                                    label: 'Temperature (°C)',
+                                    data: historicData.map(d => d.temperature),
+                                    borderColor: 'orange',
+                                    fill: false
+                                },
+                                {
+                                    label: 'Humidity (%)',
+                                    data: historicData.map(d => d.humidity),
+                                    borderColor: 'blue',
+                                    fill: false
+                                },
+                                {
+                                    label: 'Pressure (hPa)',
+                                    data: historicData.map(d => d.pressure),
+                                    borderColor: 'purple',
+                                    fill: false
+                                }
+                            ]
+                        }}
+                        options={{
+                            responsive: true,
+                            plugins: {
+                                legend: { display: true },
+                                tooltip: { mode: 'index', intersect: false }
+                            },
+                            scales: {
+                                x: {
+                                    title: { display: true, text: 'Timestamp' }
+                                },
+                                y: {
+                                    beginAtZero: false
+                                }
+                            }
+                        }}
+                    />
                 </div>
 
                 <div class="logs-panel">
