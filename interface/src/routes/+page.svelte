@@ -115,7 +115,7 @@
     }
 
     onMount(() => {
-        log('📡 App initialized', 'INFO');
+        log('App initialized', 'INFO');
         fetchHistory();
         setInterval(fetchHistory, 4000);
         loadPanel('sensors');
@@ -138,30 +138,53 @@
 </style>
 
 <header>
-    <a href="/" class="logo-link">
-        <img src="logo.png" alt="Home" class="logo">
-    </a>
-    <h1>EGH455: Advanced System Design - Group 5</h1>
+<!--    <a href="/" class="logo-link">-->
+<!--        <img src="logo.png" alt="Home" class="logo">-->
+<!--    </a>-->
+<!--    <h1>EGH455: Advanced System Design - Group 5</h1>-->
 
-    <nav>
+<!--    <nav>-->
+<!--        <button on:click={() => loadPanel('sensors')}>Dashboard</button>-->
+<!--        <button on:click={() => loadPanel('images')}>Images</button>-->
+<!--&lt;!&ndash;        <button on:click={() => loadPanel('sensor-data')}>Sensor Data</button>&ndash;&gt;-->
+<!--    </nav>-->
+
+<!--    &lt;!&ndash; HAMBURGER ICON &ndash;&gt;-->
+<!--    <div class="hamburger" role="button" tabindex="0" on:click={toggleMobileMenu}>-->
+<!--        <div>Saved Images</div>-->
+<!--        <div>Live Camera</div>-->
+<!--        <div>Logs</div>-->
+<!--    </div>-->
+    <header class="navbar">
+      <div class="logo-container">
+        <a href="/" class="logo-link">
+          <img src="/static/images/logo.png" alt="Home" class="logo">
+        </a>
+        <h1>EGH455: Advanced System Design - Group 5</h1>
+      </div>
+
+      <div class="nav-links">
         <button on:click={() => loadPanel('sensors')}>Dashboard</button>
         <button on:click={() => loadPanel('images')}>Images</button>
-<!--        <button on:click={() => loadPanel('sensor-data')}>Sensor Data</button>-->
-    </nav>
-
-    <!-- HAMBURGER ICON -->
-    <div class="hamburger" role="button" tabindex="0" on:click={toggleMobileMenu}>
-        <div>Saved Images</div>
-        <div>Live Camera</div>
-        <div>Logs</div>
-    </div>
+      </div>
+    </header>
 </header>
 
 <!-- MOBILE MENU -->
-<div class="mobile-menu {mobileMenuOpen ? 'open' : ''}">
-    <button on:click={() => mobileMenuOpen = false}>📺 Live Feed</button>
-    <button on:click={() => mobileMenuOpen = false}>📸 Images</button>
-    <button on:click={() => mobileMenuOpen = false}>📊 Sensor Data</button>
+<!--<div class="mobile-menu {mobileMenuOpen ? 'open' : ''}">-->
+<!--    <button on:click={() => mobileMenuOpen = false}>📺 Live Feed</button>-->
+<!--    <button on:click={() => mobileMenuOpen = false}>📸 Images</button>-->
+<!--    <button on:click={() => mobileMenuOpen = false}>📊 Sensor Data</button>-->
+<!--</div>-->
+
+<div class="hamburger" on:click={toggleMobileMenu}>
+  ☰
+</div>
+
+<div class={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
+  <button on:click={() => { loadPanel('sensors'); mobileMenuOpen = false; }}>📊 Dashboard</button>
+  <button on:click={() => { loadPanel('images'); mobileMenuOpen = false; }}>📸 Images</button>
+  <button on:click={() => { loadPanel('logs'); mobileMenuOpen = false; }}>📜 Logs</button>
 </div>
 
 <main>
@@ -222,7 +245,7 @@
                         </div>
                     {:else if currentView === 'logs'}
                         <div class="logs-panel">
-                            <h2>📜 Live Logs</h2>
+                            <h2>Live Logs</h2>
                             <div class="log-feed">
                                 {#each logs as logItem}
                                     <div class="log-entry {logItem.type.toLowerCase()}">

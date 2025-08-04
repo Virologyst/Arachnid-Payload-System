@@ -69,6 +69,23 @@ nav {
     gap: 10px;
 }
 
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
 nav button {
     background: #001F3F;
     color: white;
@@ -106,10 +123,14 @@ nav button:hover {
     flex-direction: column;
     background: rgba(0, 32, 64, 0.95);
     position: absolute;
-    top: 70px;
-    right: 20px;
+    /*top: 70px;*/
+    /*right: 20px;*/
     border-radius: 10px;
-    padding: 10px;
+    /*padding: 10px;*/
+    top: 60px;
+    right: 0;
+    width: 200px;
+    z-index: 999;
 }
 
 .mobile-menu.open {
@@ -123,6 +144,12 @@ nav button:hover {
     border: none;
     text-align: left;
     font-size: 1.5rem;
+}
+
+.hamburger {
+  font-size: 24px;
+  cursor: pointer;
+  display: none;
 }
 
 /* === MAIN LAYOUT === */
@@ -468,8 +495,13 @@ main {
     nav {
         display: none;
     }
+
+    .nav-links {
+        display: none;
+    }
+
     .hamburger {
-        display: flex;
+        display: block;
     }
     .sidebar,
     .panel-pane,
