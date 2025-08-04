@@ -81,10 +81,10 @@ nav {
   align-items: center;
 }
 
-.nav-links {
-  display: flex;
-  gap: 1rem;
-}
+/*.nav-links {*/
+/*  display: flex;*/
+/*  gap: 1rem;*/
+/*}*/
 
 nav button {
     background: #001F3F;
