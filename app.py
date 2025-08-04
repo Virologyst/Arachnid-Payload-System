@@ -5,10 +5,12 @@ import subprocess
 import mysql.connector
 import smbus2
 import time
+import datetime
 
 from flask import (
     Flask, Response, jsonify,
-    send_from_directory, render_template_string
+    send_from_directory, render_template_string,
+    send_file
 )
 
 # --- Enviro+ sensors ---
@@ -21,6 +23,10 @@ from ltr559 import LTR559
 # ──────────────── FLASK APP ────────────────
 app = Flask(__name__, static_folder="static", static_url_path="")
 DB_PATH = 'database/egh455.db'
+IMAGE_DIR = "/home/egh455-g5/DCIM"
+
+if not os.path.exists(IMAGE_DIR):
+    os.makedirs(IMAGE_DIR)
 
 db_config = {
     'host': 'localhost',
@@ -40,6 +46,51 @@ camRgb.setInterleaved(False)
 xoutRgb = pipeline.create(dai.node.XLinkOut)
 xoutRgb.setStreamName("rgb")
 camRgb.video.link(xoutRgb.input)
+
+@app.route("/capture", methods=["POST"])
+def capture_image():
+    """Capture a single frame from DepthAI and save it."""
+    try:
+        if qRgb is None:
+            return jsonify({"status": "error", "message": "Camera not initialized"}), 500
+
+        inRgb = qRgb.get()
+        frame = inRgb.getCvFrame()
+
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{IMAGE_DIR}/capture_{timestamp}.jpg"
+
+        cv2.imwrite(filename, frame)
+        return jsonify({"status": "ok", "file": filename})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/images")
+def list_images():
+    """Return JSON list of saved images (latest 10 first)."""
+    files = sorted(
+        [f for f in os.listdir(IMAGE_DIR) if f.endswith(".jpg")],
+        key=lambda x: os.path.getmtime(os.path.join(IMAGE_DIR, x)),
+        reverse=True
+    )
+    latest = files[:10]
+    return jsonify({"images": latest})
+
+
+@app.route("/images/<filename>")
+def get_image(filename):
+    """Serve a specific saved image."""
+    return send_file(os.path.join(IMAGE_DIR, filename), mimetype="image/jpeg")
+
+
+@app.route("/images/delete/<filename>", methods=["DELETE"])
+def delete_image(filename):
+    """Delete an image from the folder."""
+    try:
+        os.remove(os.path.join(IMAGE_DIR, filename))
+        return jsonify({"status": "ok", "message": f"{filename} deleted"})
+    except FileNotFoundError:
+        return jsonify({"status": "error", "message": "File not found"}), 404
 
 def init_depthai():
     for i in range(10):
@@ -133,6 +184,16 @@ def update():
         return jsonify({"status": "ok", "message": "Deployment triggered"})
     except subprocess.CalledProcessError as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/enviro/history")
+def get_enviro_history():
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT timestamp, temperature, humidity, pressure, oxidising, reducing, nh3, lux FROM enviro_data ORDER BY timestamp DESC LIMIT 50")
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(rows)
 
 @app.route("/status")
 def status():

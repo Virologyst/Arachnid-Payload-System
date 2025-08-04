@@ -1,22 +1,106 @@
 <script>
     import { onMount } from 'svelte';
 
+    let logs = [];
+    const MAX_LOGS = 50;
+
+    function log(message, type = 'INFO') {
+        const timestamp = new Date().toLocaleTimeString();
+        logs = [{ timestamp, message, type }, ...logs].slice(0, MAX_LOGS);
+        console.log(`[${type}] ${message}`);  // ✅ still visible in browser console too
+    }
+
+    import {
+        AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+    } from 'recharts';
+
+    let historicData = [];
+
+    async function fetchHistory() {
+        const res = await fetch('/enviro/history');
+        historicData = await res.json();
+    }
+
+    let thumbnails = [];
+    let modalImage = null;
+
+    async function fetchThumbnails() {
+        const res = await fetch('/images');
+        const data = await res.json();
+        thumbnails = data.images;
+    }
+
+    async function captureImage() {
+        await fetch('/capture', { method: 'POST' });
+        await fetchThumbnails(); // refresh sidebar
+    }
+
+    function openModal(filename) {
+        modalImage = `/images/${filename}`;
+    }
+
+    async function deleteImage(filename) {
+        await fetch(`/images/delete/${filename}`, { method: 'DELETE' });
+        modalImage = null;
+        await fetchThumbnails();
+    }
+
     let loading = false;
     let panelContent = '';
     let currentView = 'sensors';
     let enviro = {};
     let mobileMenuOpen = false;
+    let lastEnviro = {};
 
     async function fetchEnviro() {
+        // const res = await fetch('/enviro');
+        // enviro = await res.json();
+        // updateBars();
         const res = await fetch('/enviro');
-        enviro = await res.json();
+        const newEnviro = await res.json();
+
+        // 🔥 log changes
+        for (const key in newEnviro) {
+            if (newEnviro[key] !== lastEnviro[key]) {
+                log(`${key} changed to ${newEnviro[key]}`, 'DATA');
+            }
+        }
+        lastEnviro = { ...newEnviro };
+
+        enviro = newEnviro;
     }
 
+    function updateBars() {
+        bars = bars.map(bar => {
+            // get value from enviro JSON (default to 0 if missing)
+            const newValue = enviro[bar.key] || 0;
+            const percent = Math.min((newValue / bar.max) * 100, 100);
+
+            // traffic light logic
+            let newColor = 'green';
+            if (percent > 70 && percent <= 90) newColor = 'orange';
+            if (percent > 90) newColor = 'red';
+
+            return { ...bar, value: percent, color: newColor };
+        });
+    }
+
+    // store bar data in an array for easy mapping
+    let bars = [
+        { label: 'CO₂', key: 'co2', value: 0, max: 1000, color: 'green' },
+        { label: 'Temp', key: 'temperature', value: 0, max: 100, color: 'green' },
+        { label: 'Humidity', key: 'humidity', value: 0, max: 100, color: 'green' },
+        { label: 'NH3', key: 'nh3', value: 0, max: 300, color: 'green' },
+        { label: 'Light', key: 'lux', value: 0, max: 1000, color: 'green' }
+    ];
+
     async function updateDevice() {
+        log('Update triggered via UI', 'ACTION');
         loading = true;
         await fetch('/update', { method: 'POST' });
         setTimeout(() => {
             loading = false;
+            log('Device restarted successfully', 'INFO');
             window.location.reload();
         }, 5000);
     }
@@ -28,9 +112,14 @@
     }
 
     onMount(() => {
+        log('📡 App initialized', 'INFO');
+        fetchHistory();
+        setInterval(fetchHistory, 4000);
         loadPanel('sensors');
         fetchEnviro();
         setInterval(fetchEnviro, 4000);
+        fetchThumbnails();
+        setInterval(fetchThumbnails, 10000); // refresh every 10 sec
     });
 
     function toggleMobileMenu() {
@@ -53,7 +142,7 @@
     <nav>
         <button on:click={() => loadPanel('sensors')}>Dashboard</button>
         <button on:click={() => loadPanel('images')}>Images</button>
-        <button on:click={() => loadPanel('sensor-data')}>Sensor Data</button>
+<!--        <button on:click={() => loadPanel('sensor-data')}>Sensor Data</button>-->
     </nav>
 
     <!-- HAMBURGER ICON -->
@@ -72,10 +161,16 @@
 </div>
 
 <main>
+<!--    <div class="sidebar">-->
+<!--        <img src="images/thumb1.jpg" alt="Thumbnail">-->
+<!--        <img src="images/thumb1.jpg" alt="Thumbnail">-->
+<!--        <img src="images/thumb1.jpg" alt="Thumbnail">-->
+<!--    </div>-->
     <div class="sidebar">
-        <img src="images/thumb1.jpg" alt="Thumbnail">
-        <img src="images/thumb1.jpg" alt="Thumbnail">
-        <img src="images/thumb1.jpg" alt="Thumbnail">
+        <button class="capture-btn" on:click={captureImage}>📸 Capture Image</button>
+        {#each thumbnails as thumb}
+            <img src={`/images/${thumb}`} alt="Thumbnail" on:click={() => openModal(thumb)}>
+        {/each}
     </div>
 
     <div class="content">
@@ -99,6 +194,47 @@
 
                 <div id="dynamicPanel">
                     {@html panelContent}
+                </div>
+
+                <div class="sensor-graph">
+                    <h3>Historic Sensor Data</h3>
+                    <ResponsiveContainer width="100%" height={250}>
+                        <AreaChart data={historicData}>
+                            <defs>
+                                <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#ff7300" stopOpacity={0.8}/>
+                                    <stop offset="95%" stopColor="#ff7300" stopOpacity={0}/>
+                                </linearGradient>
+                                <linearGradient id="humidityGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#00c3ff" stopOpacity={0.8}/>
+                                    <stop offset="95%" stopColor="#00c3ff" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="timestamp" tick={{ fontSize: 10 }} />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+
+                            <Area type="monotone" dataKey="temperature" stroke="#ff7300" fill="url(#tempGradient)" />
+                            <Area type="monotone" dataKey="humidity" stroke="#00c3ff" fill="url(#humidityGradient)" />
+                            <Area type="monotone" dataKey="pressure" stroke="#8884d8" fillOpacity={0.2} />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+
+                <div class="logs-panel">
+                    <h2>📜 Live Logs</h2>
+                    <div class="log-feed">
+                        {#each logs as logItem}
+                            <div class="log-entry {logItem.type.toLowerCase()}">
+                                <span class="log-time">[{logItem.timestamp}]</span>
+                                <span class="log-type">[{logItem.type}]</span>
+                                <span class="log-msg">{logItem.message}</span>
+                            </div>
+                        {/each}
+                    </div>
                 </div>
 
                 <div class="enviro-card">
@@ -131,21 +267,32 @@
                 </table>
             </div>
 
+<!--            <div class="status-bars">-->
+<!--                <div>-->
+<!--                    <div class="bar"><div class="bar-fill" style="height: 60%;"></div></div>-->
+<!--                    <div class="bar-label">CO₂</div>-->
+<!--                </div>-->
+<!--                <div>-->
+<!--                    <div class="bar"><div class="bar-fill" style="height: 45%;"></div></div>-->
+<!--                    <div class="bar-label">Temp</div>-->
+<!--                </div>-->
+<!--                <div>-->
+<!--                    <div class="bar"><div class="bar-fill" style="height: 30%;"></div></div>-->
+<!--                    <div class="bar-label">Humid</div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+
             <div class="status-bars">
-                <div>
-                    <div class="bar"><div class="bar-fill" style="height: 60%;"></div></div>
-                    <div class="bar-label">CO₂</div>
-                </div>
-                <div>
-                    <div class="bar"><div class="bar-fill" style="height: 45%;"></div></div>
-                    <div class="bar-label">Temp</div>
-                </div>
-                <div>
-                    <div class="bar"><div class="bar-fill" style="height: 30%;"></div></div>
-                    <div class="bar-label">Humid</div>
-                </div>
+                {#each bars as bar}
+                    <div class="status-bar">
+                        <div class="bar">
+                            <div class="bar-fill" style="height: {bar.value}%; background-color: {bar.color};"></div>
+                        </div>
+                        <div class="bar-label">{bar.label}</div>
+                    </div>
+                {/each}
             </div>
-        </div>
 
         <!-- Update Button -->
         <button on:click={updateDevice} disabled={loading} class="update-btn">
@@ -158,6 +305,16 @@
                 <p>Updating... please wait</p>
             </div>
         {/if}
+
+        {#if modalImage}
+            <div class="modal">
+                <div class="modal-content">
+                    <img src={modalImage} alt="Full Image">
+                    <button class="delete-btn" on:click={() => deleteImage(modalImage.split('/').pop())}>🗑 Delete</button>
+                    <button class="close-btn" on:click={() => modalImage = null}>❌ Close</button>
+                </div>
+            </div>
+            {/if}
     </div>
 </main>
 
