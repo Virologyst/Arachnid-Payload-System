@@ -8,6 +8,7 @@ import time
 import datetime
 
 from collections import deque
+from logging.handlers import BufferingHandler
 import logging
 
 # keep last 50 logs for onload dumping to front end
