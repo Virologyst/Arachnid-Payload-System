@@ -139,6 +139,8 @@
 
 <main>
 
+    <h1 style="text-align: center; margin-top: 20px;">Dashboard</h1>
+
     <div class="sidebar">
 <!--        <button class="capture-btn" on:click={captureImage}>Capture Image</button>-->
         {#each thumbnails as thumb}
