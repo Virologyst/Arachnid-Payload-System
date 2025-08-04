@@ -45,7 +45,7 @@
 </style>
 
 <header>
-    <h1>EGH455 - Team 5</h1>
+    <h1>EGH455  - Team 5</h1>
 
     <nav>
         <button>Dashboard</button>
@@ -121,9 +121,9 @@
                         <tr><th>Targets</th><th>Average Readings</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td>A:</td><td>- - -</td></tr>
+                        <tr><td>A:</td><td></td></tr>
                         <tr><td>B:</td><td></td></tr>
-                        <tr><td>C:</td><td>- - -</td></tr>
+                        <tr><td>C:</td><td></td></tr>
                     </tbody>
                 </table>
             </div>
