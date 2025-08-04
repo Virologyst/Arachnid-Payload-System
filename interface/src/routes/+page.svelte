@@ -351,18 +351,6 @@
                 {/each}
             </div>
 
-<!--         Update Button -->
-        <button on:click={updateDevice} disabled={loading} class="update-btn">
-            🔄 Update & Restart
-        </button>
-
-        {#if loading}
-            <div id="loading">
-                <img src="images/loading.gif" alt="Loading..." style="width: 50px;">
-                <p>Updating... please wait</p>
-            </div>
-        {/if}
-
         {#if modalImage}
             <div class="modal">
                 <div class="modal-content">
