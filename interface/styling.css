@@ -95,7 +95,7 @@ nav button:hover {
 
 .hamburger div {
     width: 30px;
-    height: 4px;
+    height: 25px;
     background: white;
     border-radius: 2px;
 }
@@ -129,7 +129,7 @@ nav button:hover {
 main {
     display: flex;
     margin-top: 100px;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 100px);
 }
 
 /* === SIDEBAR === */
@@ -237,7 +237,7 @@ main {
 /* === BOTTOM ROW === */
 .bottom-row {
     display: flex;
-    height: 150px;
+    height: 200px;
     border-top: 2px solid #1d2e5a;
     background: #111827;
 }
@@ -429,7 +429,8 @@ main {
     background: #111;
     color: #fff;
     padding: 10px;
-    height: 500px;
+    height: 100%;
+    max-height: 700px;
     overflow-y: auto;
     border-radius: 8px;
     font-family: monospace;
