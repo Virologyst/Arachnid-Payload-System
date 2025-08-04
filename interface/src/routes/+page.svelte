@@ -166,41 +166,27 @@
   <div class="nav">
 <!--    <button on:click={() => loadPanel('sensors')}>Dashboard</button>-->
 <!--    <button on:click={() => loadPanel('images')}>Images</button>-->
-        <a href="/" class="nav-btn">Dashboard</a>
-  <a href="/images" class="nav-btn">Images</a>
-  </div>
+    <a href="/" class="nav-btn">Dashboard</a>
+    <a href="/images" class="nav-btn">Images</a>
+</div>
 
     <div class="hamburger" on:click={toggleMobileMenu}>
       ☰
     </div>
 
     <div class={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
-      <a href="/" class="mobile-btn">📊 Dashboard</a>
-      <a href="/images" class="mobile-btn">📸 Images</a>
-      <a href="/logs" class="mobile-btn">📜 Logs</a>
-    <!--  <button on:click={() => { loadPanel('sensors'); mobileMenuOpen = false; }}>📊 Dashboard</button>-->
-    <!--  <button on:click={() => { loadPanel('images'); mobileMenuOpen = false; }}>📸 Images</button>-->
-    <!--  <button on:click={() => { loadPanel('logs'); mobileMenuOpen = false; }}>📜 Logs</button>-->
+      <a href="/" class="mobile-btn">Dashboard</a>
+      <a href="/images" class="mobile-btn">Images</a>
+      <a href="/logs" class="mobile-btn">Logs</a>
     </div>
 
-
-
 </header>
-
-
-<!-- MOBILE MENU -->
-<!--<div class="mobile-menu {mobileMenuOpen ? 'open' : ''}">-->
-<!--    <button on:click={() => mobileMenuOpen = false}>📺 Live Feed</button>-->
-<!--    <button on:click={() => mobileMenuOpen = false}>📸 Images</button>-->
-<!--    <button on:click={() => mobileMenuOpen = false}>📊 Sensor Data</button>-->
-<!--</div>-->
-
 
 
 <main>
 
     <div class="sidebar">
-<!--        <button class="capture-btn" on:click={captureImage}>📸 Capture Image</button>-->
+<!--        <button class="capture-btn" on:click={captureImage}>Capture Image</button>-->
         {#each thumbnails as thumb}
             <img src={`/images/${thumb}`} alt="Thumbnail" on:click={() => openModal(thumb)}>
 <!--            <img src="images/thumb1.jpg" alt="Thumbnail">&ndash;&gt;-->
@@ -209,14 +195,6 @@
 
     <div class="content">
         <div class="top-row">
-
-            <!-- Live Camera Feed -->
-<!--            <div class="camera-pane">-->
-<!--                <img src="/video_feed" alt="Live Feed">-->
-<!--                <div class="sensor-overlay">-->
-<!--                    🌡 {enviro.temperature}°C | 💧 {enviro.humidity}% | 📈 {enviro.pressure}hPa-->
-<!--                </div>-->
-<!--            </div>-->
 
             <div class="camera-pane">
                 <img src="/video_feed" alt="Live Feed">
@@ -330,19 +308,6 @@
 <!--                    />-->
 <!--                </div>-->
 
-<!--                <div class="logs-panel">-->
-<!--                    <h2>📜 Live Logs</h2>-->
-<!--                    <div class="log-feed">-->
-<!--                        {#each logs as logItem}-->
-<!--                            <div class="log-entry {logItem.type.toLowerCase()}">-->
-<!--                                <span class="log-time">[{logItem.timestamp}]</span>-->
-<!--                                <span class="log-type">[{logItem.type}]</span>-->
-<!--                                <span class="log-msg">{logItem.message}</span>-->
-<!--                            </div>-->
-<!--                        {/each}-->
-<!--                    </div>-->
-<!--                </div>-->
-
                 <div class="enviro-card">
                     <h2>Enviro+ Live Data</h2>
                     <ul>
@@ -374,22 +339,6 @@
                 </table>
             </div>
 
-<!--            <div class="status-bars">-->
-<!--                <div>-->
-<!--                    <div class="bar"><div class="bar-fill" style="height: 60%;"></div></div>-->
-<!--                    <div class="bar-label">CO₂</div>-->
-<!--                </div>-->
-<!--                <div>-->
-<!--                    <div class="bar"><div class="bar-fill" style="height: 45%;"></div></div>-->
-<!--                    <div class="bar-label">Temp</div>-->
-<!--                </div>-->
-<!--                <div>-->
-<!--                    <div class="bar"><div class="bar-fill" style="height: 30%;"></div></div>-->
-<!--                    <div class="bar-label">Humid</div>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
-
             <div class="status-bars">
                 {#each bars as bar}
                     <div class="status-bar">
@@ -401,17 +350,17 @@
                 {/each}
             </div>
 
-        <!-- Update Button -->
-<!--        <button on:click={updateDevice} disabled={loading} class="update-btn">-->
-<!--            🔄 Update & Restart-->
-<!--        </button>-->
+<!--         Update Button -->
+        <button on:click={updateDevice} disabled={loading} class="update-btn">
+            🔄 Update & Restart
+        </button>
 
-<!--        {#if loading}-->
-<!--            <div id="loading">-->
-<!--                <img src="images/loading.gif" alt="Loading..." style="width: 50px;">-->
-<!--                <p>Updating... please wait</p>-->
-<!--            </div>-->
-<!--        {/if}-->
+        {#if loading}
+            <div id="loading">
+                <img src="images/loading.gif" alt="Loading..." style="width: 50px;">
+                <p>Updating... please wait</p>
+            </div>
+        {/if}
 
         {#if modalImage}
             <div class="modal">
