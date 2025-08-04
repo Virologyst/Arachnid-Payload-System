@@ -1,30 +1,58 @@
+# import os
+# import cv2
+# import depthai as dai
+# import subprocess
+# import mysql.connector
+# import smbus2
+# import time
+# import datetime
+#
+# from collections import deque
+# from logging.handlers import BufferingHandler
+# import logging
+#
+# # keep last 50 logs for onload dumping to front end
+# LOG_BUFFER = deque(maxlen=50)
+#
+# # configure logger
+# handler = BufferingHandler(capacity=100)
+# formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+# handler.setFormatter(formatter)
+# # app.logger.addHandler(handler)
+# # app.logger.setLevel(logging.INFO)
+#
+# # class BufferingHandler(logging.Handler):
+# #     def emit(self, record):
+# #         LOG_BUFFER.append(self.format(record))
+#
+# class FrontendBufferHandler(logging.Handler):
+#     def emit(self, record):
+#         LOG_BUFFER.append(self.format(record))
+#
+# from flask import (
+#     Flask, Response, jsonify,
+#     send_from_directory, render_template_string,
+#     send_file
+# )
+#
+# # --- Enviro+ sensors ---
+# from enviroplus import gas
+# # import bme280
+# from bme280 import BME280
+# from ltr559 import LTR559
+# # import ltr559
+
+# ───── Standard Library ─────
 import os
-import cv2
-import depthai as dai
-import subprocess
-import mysql.connector
-import smbus2
 import time
 import datetime
-
 from collections import deque
-from logging.handlers import BufferingHandler
 import logging
 
-# keep last 50 logs for onload dumping to front end
-LOG_BUFFER = deque(maxlen=50)
-
-# configure logger
-handler = BufferingHandler()
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-handler.setFormatter(formatter)
-app.logger.addHandler(handler)
-app.logger.setLevel(logging.INFO)
-
-class BufferingHandler(logging.Handler):
-    def emit(self, record):
-        LOG_BUFFER.append(self.format(record))
-
+# ───── Third-Party ─────
+import cv2
+import depthai as dai
+import smbus2
 from flask import (
     Flask, Response, jsonify,
     send_from_directory, render_template_string,
@@ -33,10 +61,28 @@ from flask import (
 
 # --- Enviro+ sensors ---
 from enviroplus import gas
-# import bme280
 from bme280 import BME280
 from ltr559 import LTR559
-# import ltr559
+
+# ───── App Setup ─────
+app = Flask(__name__, static_folder="static", static_url_path="")
+DB_PATH = 'database/egh455.db'
+IMAGE_DIR = "/home/egh455-g5/DCIM"
+
+# ───── Logging Setup ─────
+LOG_BUFFER = deque(maxlen=50)
+
+class FrontendBufferHandler(logging.Handler):
+    def emit(self, record):
+        LOG_BUFFER.append(self.format(record))
+
+handler = FrontendBufferHandler()
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+handler.setFormatter(formatter)
+
+app.logger.addHandler(handler)
+app.logger.setLevel(logging.INFO)
+
 
 # ──────────────── FLASK APP ────────────────
 app = Flask(__name__, static_folder="static", static_url_path="")
