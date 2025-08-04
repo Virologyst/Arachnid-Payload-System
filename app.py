@@ -129,7 +129,7 @@ def get_enviro_data():
 def update():
     """Trigger deploy script & restart service."""
     try:
-        subprocess.run(["deploy"], check=True)
+        subprocess.run(["/home/egh455-g5/EGH455/deploy.sh"], check=True)
         return jsonify({"status": "ok", "message": "Deployment triggered"})
     except subprocess.CalledProcessError as e:
         return jsonify({"status": "error", "message": str(e)}), 500
