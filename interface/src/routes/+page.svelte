@@ -137,7 +137,7 @@
 
 </style>
 
-<h1 style="text-align: center; margin-bottom: -70px;">Dashboard</h1>
+<h1 style="text-align: center; margin-bottom: -80px;">Dashboard</h1>
 
 <main>
 
