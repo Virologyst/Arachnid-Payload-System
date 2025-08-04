@@ -175,17 +175,7 @@
                 <div id="dynamicPanel">
                     {#if currentView === 'sensors'}
                         <div class="panel-sensors">
-                            <h2>Sensor Data (Snapshot)</h2>
-                            <ul>
-                                <li>🌡 Temperature: {enviro.temperature} °C</li>
-                                <li>💧 Humidity: {enviro.humidity} %</li>
-                                <li>📈 Pressure: {enviro.pressure} hPa</li>
-                                <li>🟠 Oxidising Gas: {enviro.oxidising} kΩ</li>
-                                <li>🔵 Reducing Gas: {enviro.reducing} kΩ</li>
-                                <li>🟢 NH3: {enviro.nh3} kΩ</li>
-                                <li>💡 Light: {enviro.lux} lux</li>
-                                <li>📏 Proximity: {enviro.proximity}</li>
-                            </ul>
+                            <h2>Sensor Data (Graph Connected to Database)</h2>
                         </div>
                     {:else if currentView === 'logs'}
                         <div class="logs-panel">
@@ -266,16 +256,26 @@
 
                 <div class="enviro-card">
                     <h2>Enviro+ Live Data</h2>
-                    <ul>
-                        <li>Temp: {enviro.temperature} °C</li>
-                        <li>Humidity: {enviro.humidity} %</li>
-                        <li>Pressure: {enviro.pressure} hPa</li>
-                        <li>Oxidising: {enviro.oxidising} kΩ</li>
-                        <li>Reducing: {enviro.reducing} kΩ</li>
-                        <li>Ammonia: {enviro.nh3} kΩ</li>
-                        <li>Light: {enviro.lux} lux</li>
-                        <li>Proximity: {enviro.proximity}</li>
-                    </ul>
+<!--                    <ul>-->
+<!--                        <li>Temp: {enviro.temperature} °C</li>-->
+<!--                        <li>Humidity: {enviro.humidity} %</li>-->
+<!--                        <li>Pressure: {enviro.pressure} hPa</li>-->
+<!--                        <li>Oxidising: {enviro.oxidising} kΩ</li>-->
+<!--                        <li>Reducing: {enviro.reducing} kΩ</li>-->
+<!--                        <li>Ammonia: {enviro.nh3} kΩ</li>-->
+<!--                        <li>Light: {enviro.lux} lux</li>-->
+<!--                        <li>Proximity: {enviro.proximity}</li>-->
+<!--                    </ul>-->
+                        <ul>
+                            <li>🌡 Temperature: {enviro.temperature} °C</li>
+                            <li>💧 Humidity: {enviro.humidity} %</li>
+                            <li>📈 Pressure: {enviro.pressure} hPa</li>
+                            <li>🟠 Oxidising Gas: {enviro.oxidising} kΩ</li>
+                            <li>🔵 Reducing Gas: {enviro.reducing} kΩ</li>
+                            <li>🟢 NH3: {enviro.nh3} kΩ</li>
+                            <li>💡 Light: {enviro.lux} lux</li>
+                            <li>📏 Proximity: {enviro.proximity}</li>
+                        </ul>
                 </div>
 
             </div>
