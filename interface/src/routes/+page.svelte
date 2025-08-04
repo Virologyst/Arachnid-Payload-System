@@ -137,7 +137,7 @@
 
 </style>
 
-<header>
+
 <!--    <a href="/" class="logo-link">-->
 <!--        <img src="logo.png" alt="Home" class="logo">-->
 <!--    </a>-->
@@ -156,20 +156,20 @@
 <!--        <div>Logs</div>-->
 <!--    </div>-->
 
-    <header class="navbar">
-      <div class="logo-container">
-        <a href="/" class="logo-link">
-          <img src="logo.png" alt="Home" class="logo">
-        </a>
-        <h1 style="margin-left: 25px">EGH455: Advanced System Design - Group 5</h1>
-      </div>
+<header class="navbar">
+  <div class="logo-container">
+    <a href="/" class="logo-link">
+      <img src="logo.png" alt="Home" class="logo">
+    </a>
+    <h1 style="margin-left: 25px">EGH455: Advanced System Design - Group 5</h1>
+  </div>
 
-      <div class="nav">
-        <button on:click={() => loadPanel('sensors')}>Dashboard</button>
-        <button on:click={() => loadPanel('images')}>Images</button>
-      </div>
-    </header>
+  <div class="nav">
+    <button on:click={() => loadPanel('sensors')}>Dashboard</button>
+    <button on:click={() => loadPanel('images')}>Images</button>
+  </div>
 </header>
+
 
 <!-- MOBILE MENU -->
 <!--<div class="mobile-menu {mobileMenuOpen ? 'open' : ''}">-->
