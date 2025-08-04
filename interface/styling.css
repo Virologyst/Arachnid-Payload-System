@@ -39,7 +39,7 @@ header {
 
 header h1 {
     color: white;
-    font-size: 1rem;
+    font-size: 1.5rem;
     /*margin-left: 15px;*/
 }
 
@@ -122,7 +122,7 @@ nav button:hover {
     padding: 10px;
     border: none;
     text-align: left;
-    font-size: 1.2rem;
+    font-size: 1.5rem;
 }
 
 /* === MAIN LAYOUT === */
