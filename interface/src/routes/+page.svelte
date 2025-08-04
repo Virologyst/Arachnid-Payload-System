@@ -74,7 +74,8 @@
 
     // store bar data in an array for easy mapping
     let bars = [
-        { label: 'CO₂', key: 'co2', value: 0, max: 1000, color: 'green' },
+        // { label: 'CO₂', key: 'co2', value: 0, max: 1000, color: 'green' },
+        { label: 'Ammonia', key: 'ammonia', value: 0, max: 1000, color: 'green' },
         { label: 'Temp', key: 'temperature', value: 0, max: 100, color: 'green' },
         { label: 'Humidity', key: 'humidity', value: 0, max: 100, color: 'green' },
         { label: 'NH3', key: 'nh3', value: 0, max: 300, color: 'green' },
@@ -89,7 +90,7 @@
 
             // traffic light logic
             let newColor = 'green';
-            if (percent > 70 && percent <= 90) newColor = 'orange';
+            if (percent > 50 && percent <= 90) newColor = 'orange';
             if (percent > 90) newColor = 'red';
 
             return { ...bar, value: percent, color: newColor };
