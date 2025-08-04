@@ -1,46 +1,4 @@
-# import os
-# import cv2
-# import depthai as dai
-# import subprocess
-# import mysql.connector
-# import smbus2
-# import time
-# import datetime
-#
-# from collections import deque
-# from logging.handlers import BufferingHandler
-# import logging
-#
-# # keep last 50 logs for onload dumping to front end
-# LOG_BUFFER = deque(maxlen=50)
-#
-# # configure logger
-# handler = BufferingHandler(capacity=100)
-# formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-# handler.setFormatter(formatter)
-# # app.logger.addHandler(handler)
-# # app.logger.setLevel(logging.INFO)
-#
-# # class BufferingHandler(logging.Handler):
-# #     def emit(self, record):
-# #         LOG_BUFFER.append(self.format(record))
-#
-# class FrontendBufferHandler(logging.Handler):
-#     def emit(self, record):
-#         LOG_BUFFER.append(self.format(record))
-#
-# from flask import (
-#     Flask, Response, jsonify,
-#     send_from_directory, render_template_string,
-#     send_file
-# )
-#
-# # --- Enviro+ sensors ---
-# from enviroplus import gas
-# # import bme280
-# from bme280 import BME280
-# from ltr559 import LTR559
-# # import ltr559
+
 
 # ───── Standard Library ─────
 import os
@@ -70,7 +28,7 @@ DB_PATH = 'database/egh455.db'
 IMAGE_DIR = "/home/egh455-g5/DCIM"
 
 # ───── Logging Setup ─────
-LOG_BUFFER = deque(maxlen=50)
+LOG_BUFFER = deque(maxlen=1000)
 
 class FrontendBufferHandler(logging.Handler):
     def emit(self, record):
@@ -277,57 +235,6 @@ def status():
     conn.close()
     return render_template_string("<h1>Status Table</h1>" + str(results))
 
-# @app.route("/panel/<view>")
-# def panel_content(view):
-#     """Dynamic panel content loader for dashboard tabs."""
-#     if view == "sensors":
-#         try:
-#             temperature = round(bme280_sensor.get_temperature(), 1)
-#             humidity = round(bme280_sensor.get_humidity(), 1)
-#             pressure = round(bme280_sensor.get_pressure(), 1)
-#
-#             gas_readings = gas.read_all()
-#             oxidising = round(gas_readings.oxidising / 1000, 3)
-#             reducing = round(gas_readings.reducing / 1000, 3)
-#             nh3 = round(gas_readings.nh3 / 1000, 3)
-#
-#             lux = ltr559.get_lux()
-#             prox = ltr559.get_proximity()
-#
-#             # ✅ wrap in a container div so Svelte always sees valid HTML
-#             # html = f"""
-#             #     <div class="panel-sensors">
-#             #         <h2>Sensor Data (Snapshot)</h2>
-#             #         <ul>
-#             #             <li>🌡 Temperature: {temperature} °C</li>
-#             #             <li>💧 Humidity: {humidity} %</li>
-#             #             <li>📈 Pressure: {pressure} hPa</li>
-#             #             <li>🟠 Oxidising Gas: {oxidising} kΩ</li>
-#             #             <li>🔵 Reducing Gas: {reducing} kΩ</li>
-#             #             <li>🟢 NH3: {nh3} kΩ</li>
-#             #             <li>💡 Light: {lux} lux</li>
-#             #             <li>📏 Proximity: {prox}</li>
-#             #         </ul>
-#             #     </div>
-#             # """
-#             # return render_template_string(html)
-#         except Exception as e:
-#             app.logger.error(f"Panel sensor read failed: {e}")
-#             return render_template_string(f"<div class='panel-error'>⚠️ Sensor Error: {e}</div>")
-#
-#     elif view == "logs":
-#         return render_template_string("<div><h2>Logs</h2><p>(System logs will be displayed here)</p></div>")
-#     elif view == "targets":
-#         return render_template_string("<div><h2>Targets</h2><p>No targets detected yet.</p></div>")
-#     elif view == "system":
-#         return render_template_string("""
-#             <div>
-#                 <h2>System Controls</h2>
-#                 <button onclick="fetch('/update', {method:'POST'})">🔄 Update & Restart</button>
-#             </div>
-#         """)
-#     else:
-#         return "Invalid panel", 404
 
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@
     }
 
     let logs = [];
-    const MAX_LOGS = 50;
+    const MAX_LOGS = 1000;
 
     function log(message, type = 'INFO') {
         const timestamp = new Date().toLocaleTimeString();
