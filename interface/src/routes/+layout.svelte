@@ -41,7 +41,4 @@
 	<a href="/images" on:click={() => mobileMenuOpen = false}>📸 Images</a>
 </div>
 
-<!-- This renders the actual page content -->
-<slot />
-
 {@render children?.()}
