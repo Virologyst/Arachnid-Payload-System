@@ -45,7 +45,7 @@
 </style>
 
 <header>
-    <h1>EGH455  - Team 5</h1>
+    <h1>EGH455: Advanced System Design - Group 5</h1>
 
     <nav>
         <button>Dashboard</button>
