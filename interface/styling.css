@@ -110,6 +110,7 @@ header h1 {
     text-decoration: none;
     display: inline-block;
     transition: background 0.2s ease, transform 0.1s ease;
+    margin-right: 25px;
 }
 
 .nav-btn:hover, .mobile-btn:hover {
