@@ -7,6 +7,23 @@ import smbus2
 import time
 import datetime
 
+from collections import deque
+import logging
+
+# keep last 50 logs for onload dumping to front end
+LOG_BUFFER = deque(maxlen=50)
+
+# configure logger
+handler = BufferingHandler()
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
+app.logger.setLevel(logging.INFO)
+
+class BufferingHandler(logging.Handler):
+    def emit(self, record):
+        LOG_BUFFER.append(self.format(record))
+
 from flask import (
     Flask, Response, jsonify,
     send_from_directory, render_template_string,
@@ -128,7 +145,10 @@ bme280_sensor = BME280(i2c_dev=bus)
 device, qRgb = init_depthai()
 
 # ──────────────── ROUTES ────────────────
-
+@app.route("/logs")
+def get_logs():
+    """Return last 50 backend logs."""
+    return jsonify(list(LOG_BUFFER))
 @app.route("/")
 def serve_index():
     """Serve the Svelte-built index.html."""

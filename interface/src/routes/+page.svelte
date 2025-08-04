@@ -1,6 +1,13 @@
 <script>
     import { onMount } from 'svelte';
 
+    let backendLogs = [];
+
+    async function fetchBackendLogs() {
+        const res = await fetch('/logs');
+        backendLogs = await res.json();
+    }
+
     let logs = [];
     const MAX_LOGS = 50;
 
@@ -119,7 +126,8 @@
         fetchEnviro();
         setInterval(fetchEnviro, 4000);
         fetchThumbnails();
-        setInterval(fetchThumbnails, 10000); // refresh every 10 sec
+        setInterval(fetchThumbnails, 10000); // 10s
+        fetchBackendLogs();
     });
 
     function toggleMobileMenu() {
