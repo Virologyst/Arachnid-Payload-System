@@ -277,57 +277,57 @@ def status():
     conn.close()
     return render_template_string("<h1>Status Table</h1>" + str(results))
 
-@app.route("/panel/<view>")
-def panel_content(view):
-    """Dynamic panel content loader for dashboard tabs."""
-    if view == "sensors":
-        try:
-            temperature = round(bme280_sensor.get_temperature(), 1)
-            humidity = round(bme280_sensor.get_humidity(), 1)
-            pressure = round(bme280_sensor.get_pressure(), 1)
-
-            gas_readings = gas.read_all()
-            oxidising = round(gas_readings.oxidising / 1000, 3)
-            reducing = round(gas_readings.reducing / 1000, 3)
-            nh3 = round(gas_readings.nh3 / 1000, 3)
-
-            lux = ltr559.get_lux()
-            prox = ltr559.get_proximity()
-
-            # ✅ wrap in a container div so Svelte always sees valid HTML
-            # html = f"""
-            #     <div class="panel-sensors">
-            #         <h2>Sensor Data (Snapshot)</h2>
-            #         <ul>
-            #             <li>🌡 Temperature: {temperature} °C</li>
-            #             <li>💧 Humidity: {humidity} %</li>
-            #             <li>📈 Pressure: {pressure} hPa</li>
-            #             <li>🟠 Oxidising Gas: {oxidising} kΩ</li>
-            #             <li>🔵 Reducing Gas: {reducing} kΩ</li>
-            #             <li>🟢 NH3: {nh3} kΩ</li>
-            #             <li>💡 Light: {lux} lux</li>
-            #             <li>📏 Proximity: {prox}</li>
-            #         </ul>
-            #     </div>
-            # """
-            # return render_template_string(html)
-        except Exception as e:
-            app.logger.error(f"Panel sensor read failed: {e}")
-            return render_template_string(f"<div class='panel-error'>⚠️ Sensor Error: {e}</div>")
-
-    elif view == "logs":
-        return render_template_string("<div><h2>Logs</h2><p>(System logs will be displayed here)</p></div>")
-    elif view == "targets":
-        return render_template_string("<div><h2>Targets</h2><p>No targets detected yet.</p></div>")
-    elif view == "system":
-        return render_template_string("""
-            <div>
-                <h2>System Controls</h2>
-                <button onclick="fetch('/update', {method:'POST'})">🔄 Update & Restart</button>
-            </div>
-        """)
-    else:
-        return "Invalid panel", 404
+# @app.route("/panel/<view>")
+# def panel_content(view):
+#     """Dynamic panel content loader for dashboard tabs."""
+#     if view == "sensors":
+#         try:
+#             temperature = round(bme280_sensor.get_temperature(), 1)
+#             humidity = round(bme280_sensor.get_humidity(), 1)
+#             pressure = round(bme280_sensor.get_pressure(), 1)
+#
+#             gas_readings = gas.read_all()
+#             oxidising = round(gas_readings.oxidising / 1000, 3)
+#             reducing = round(gas_readings.reducing / 1000, 3)
+#             nh3 = round(gas_readings.nh3 / 1000, 3)
+#
+#             lux = ltr559.get_lux()
+#             prox = ltr559.get_proximity()
+#
+#             # ✅ wrap in a container div so Svelte always sees valid HTML
+#             # html = f"""
+#             #     <div class="panel-sensors">
+#             #         <h2>Sensor Data (Snapshot)</h2>
+#             #         <ul>
+#             #             <li>🌡 Temperature: {temperature} °C</li>
+#             #             <li>💧 Humidity: {humidity} %</li>
+#             #             <li>📈 Pressure: {pressure} hPa</li>
+#             #             <li>🟠 Oxidising Gas: {oxidising} kΩ</li>
+#             #             <li>🔵 Reducing Gas: {reducing} kΩ</li>
+#             #             <li>🟢 NH3: {nh3} kΩ</li>
+#             #             <li>💡 Light: {lux} lux</li>
+#             #             <li>📏 Proximity: {prox}</li>
+#             #         </ul>
+#             #     </div>
+#             # """
+#             # return render_template_string(html)
+#         except Exception as e:
+#             app.logger.error(f"Panel sensor read failed: {e}")
+#             return render_template_string(f"<div class='panel-error'>⚠️ Sensor Error: {e}</div>")
+#
+#     elif view == "logs":
+#         return render_template_string("<div><h2>Logs</h2><p>(System logs will be displayed here)</p></div>")
+#     elif view == "targets":
+#         return render_template_string("<div><h2>Targets</h2><p>No targets detected yet.</p></div>")
+#     elif view == "system":
+#         return render_template_string("""
+#             <div>
+#                 <h2>System Controls</h2>
+#                 <button onclick="fetch('/update', {method:'POST'})">🔄 Update & Restart</button>
+#             </div>
+#         """)
+#     else:
+#         return "Invalid panel", 404
 
 
 if __name__ == '__main__':
