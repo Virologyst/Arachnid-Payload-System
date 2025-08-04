@@ -6,12 +6,17 @@
     let contextMenuX = 0;
     let contextMenuY = 0;
     let selectedImage = null;
+    let modalImage = null;
 
     async function fetchThumbnails() {
         const res = await fetch('/images');
         const data = await res.json();
         thumbnails = data.images || [];
     }
+
+    function openModal(filename) {
+		modalImage = `/images/${filename}`;
+	}
 
     async function deleteImage(filename) {
         await fetch(`/images/delete/${filename}`, { method: 'DELETE' });
@@ -84,6 +89,43 @@
     .context-menu button:hover {
         text-decoration: underline;
     }
+
+    	.modal {
+		position: fixed;
+		top: 0; left: 0;
+		width: 100%; height: 100%;
+		background: rgba(0, 0, 0, 0.8);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+	.modal-content {
+		background: #1d2e5a;
+		padding: 20px;
+		border-radius: 12px;
+		max-width: 90%;
+		max-height: 90%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	.modal-content img {
+		max-width: 100%;
+		max-height: 70vh;
+	}
+	.delete-btn, .close-btn {
+		margin: 10px;
+		padding: 10px 15px;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		color: white;
+	}
+	.delete-btn { background: #cc0000; }
+	.close-btn { background: #555; }
+	.delete-btn:hover { background: #ff3333; }
+	.close-btn:hover { background: #777; }
 </style>
 
 <h1 style="text-align: center; margin-top: 20px;">Image Gallery</h1>
@@ -98,6 +140,19 @@
         />
     {/each}
 </div>
+
+<!-- Modal -->
+{#if modalImage}
+	<div class="modal">
+		<div class="modal-content">
+			<img src={modalImage} alt="Full Image">
+			<div>
+				<button class="delete-btn" on:click={() => deleteImage(modalImage.split('/').pop())}>🗑 Delete</button>
+				<button class="close-btn" on:click={() => modalImage = null}>Close</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 {#if contextMenuVisible}
     <div
