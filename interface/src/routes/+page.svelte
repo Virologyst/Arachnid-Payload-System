@@ -45,19 +45,22 @@
 </style>
 
 <header>
+    <a href="/" class="logo-link">
+        <img src="images/logo.png" alt="Home" class="logo">
+    </a>
     <h1>EGH455: Advanced System Design - Group 5</h1>
 
     <nav>
-        <button>Dashboard</button>
-        <button>Images</button>
-        <button>Sensor Data</button>
+        <button on:click={() => loadPanel('sensors')}>Dashboard</button>
+        <button on:click={() => loadPanel('images')}>Images</button>
+        <button on:click={() => loadPanel('sensor-data')}>Sensor Data</button>
     </nav>
 
     <!-- HAMBURGER ICON -->
-    <div class="hamburger" on:click={toggleMobileMenu}>
-        <div></div>
-        <div></div>
-        <div></div>
+    <div class="hamburger" role="button" tabindex="0" on:click={toggleMobileMenu}>
+        <div>Saved Images</div>
+        <div>Live Camera</div>
+        <div>Logs</div>
     </div>
 </header>
 

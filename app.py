@@ -163,22 +163,22 @@ def panel_content(view):
             prox = ltr559.get_proximity()
 
             # ✅ wrap in a container div so Svelte always sees valid HTML
-            html = f"""
-                <div class="panel-sensors">
-                    <h2>Sensor Data (Snapshot)</h2>
-                    <ul>
-                        <li>🌡 Temperature: {temperature} °C</li>
-                        <li>💧 Humidity: {humidity} %</li>
-                        <li>📈 Pressure: {pressure} hPa</li>
-                        <li>🟠 Oxidising Gas: {oxidising} kΩ</li>
-                        <li>🔵 Reducing Gas: {reducing} kΩ</li>
-                        <li>🟢 NH3: {nh3} kΩ</li>
-                        <li>💡 Light: {lux} lux</li>
-                        <li>📏 Proximity: {prox}</li>
-                    </ul>
-                </div>
-            """
-            return render_template_string(html)
+            # html = f"""
+            #     <div class="panel-sensors">
+            #         <h2>Sensor Data (Snapshot)</h2>
+            #         <ul>
+            #             <li>🌡 Temperature: {temperature} °C</li>
+            #             <li>💧 Humidity: {humidity} %</li>
+            #             <li>📈 Pressure: {pressure} hPa</li>
+            #             <li>🟠 Oxidising Gas: {oxidising} kΩ</li>
+            #             <li>🔵 Reducing Gas: {reducing} kΩ</li>
+            #             <li>🟢 NH3: {nh3} kΩ</li>
+            #             <li>💡 Light: {lux} lux</li>
+            #             <li>📏 Proximity: {prox}</li>
+            #         </ul>
+            #     </div>
+            # """
+            # return render_template_string(html)
         except Exception as e:
             app.logger.error(f"Panel sensor read failed: {e}")
             return render_template_string(f"<div class='panel-error'>⚠️ Sensor Error: {e}</div>")
