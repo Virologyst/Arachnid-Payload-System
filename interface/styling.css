@@ -30,13 +30,6 @@ header {
     transform: scale(1.05);
 }
 
-
-/*header h1 {*/
-/*    color: white;*/
-/*    font-size: 1.8rem;*/
-/*    margin-left: 15px;*/
-/*}*/
-
 header h1 {
     color: white;
     font-size: 1.5rem;
@@ -44,29 +37,11 @@ header h1 {
 }
 
 /* === NAVIGATION === */
-/*nav {*/
-/*    display: flex;*/
-/*    gap: 15px;*/
-/*}*/
-
-/*nav button {*/
-/*    background: #14213d;*/
-/*    color: white;*/
-/*    border: none;*/
-/*    padding: 8px 14px;*/
-/*    border-radius: 12px;*/
-/*    cursor: pointer;*/
-/*    transition: all 0.2s ease;*/
-/*}*/
-
-/*nav button:hover {*/
-/*    background: #1d2e5a;*/
-/*}*/
 
 .nav {
     margin-left: -120px;
     display: flex;
-    gap: 10px;
+    /*gap: 10px;*/
 }
 
 .navbar {
@@ -80,27 +55,6 @@ header h1 {
   display: flex;
   align-items: center;
 }
-
-/*.nav-links {*/
-/*  display: flex;*/
-/*  gap: 1rem;*/
-/*}*/
-
-/*.nav button {*/
-/*    background: #001F3F;*/
-/*    color: white;*/
-/*    padding: 10px 15px;*/
-/*    border: none;*/
-/*    max-height: 50px;*/
-/*    border-radius: 12px;*/
-/*    cursor: pointer;*/
-/*    transition: background 0.2s ease, transform 0.1s ease;*/
-/*}*/
-
-/*.nav button:hover {*/
-/*    background: #004080;*/
-/*    transform: translateY(-2px);*/
-/*}*/
 
 .nav-btn, .mobile-btn {
     background: #001F3F;
@@ -124,12 +78,6 @@ header h1 {
 }
 
 /* === HAMBURGER MENU === */
-/*.hamburger {*/
-/*    display: none; !* shown only on mobile *!*/
-/*    flex-direction: column;*/
-/*    gap: 5px;*/
-/*    cursor: pointer;*/
-/*}*/
 
 .hamburger {
     font-size: 24px;
@@ -173,12 +121,6 @@ header h1 {
     text-align: left;
     font-size: 1.5rem;
 }
-
-/*.hamburger {*/
-/*  font-size: 24px;*/
-/*  cursor: pointer;*/
-/*  display: none;*/
-/*}*/
 
 /* === MAIN LAYOUT === */
 main {
@@ -302,15 +244,6 @@ main {
     padding: 10px;
 }
 
-/*.status-bars {*/
-/*    flex: 1;*/
-/*    display: flex;*/
-/*    justify-content: space-around;*/
-/*    align-items: flex-end;*/
-/*    padding: 10px;*/
-/*    background: transparent;*/
-/*}*/
-
 .bar {
     width: 50px;
     height: 100px;
@@ -401,25 +334,39 @@ main {
 /* Capture button */
 .capture-overlay {
     position: absolute;
-    bottom: 10px;
+    bottom: 50px;
     width: 100%;
     display: flex;
     justify-content: center;
     pointer-events: none;
 }
 
+/*.capture-btn {*/
+/*    pointer-events: auto;*/
+/*    padding: 10px 20px;*/
+/*    font-size: 1.2em;*/
+/*    border: none;*/
+/*    background: #ff6600;*/
+/*    color: white;*/
+/*    border-radius: 8px;*/
+/*    cursor: pointer;*/
+/*}*/
+
 .capture-btn {
     pointer-events: auto;
     padding: 10px 20px;
     font-size: 1.2em;
     border: none;
-    background: #ff6600;
+    background: rgba(255, 102, 0, 0.5);
     color: white;
     border-radius: 8px;
     cursor: pointer;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
+
 .capture-btn:hover {
-    background: #0066cc;
+    background: #ff6600;
 }
 
 /* Thumbnails */
