@@ -340,6 +340,7 @@ main {
     display: flex;
     justify-content: right;
     pointer-events: none;
+    padding: 5px;
 }
 
 /*.capture-btn {*/
