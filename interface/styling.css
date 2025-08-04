@@ -12,7 +12,7 @@ header {
     align-items: center;
     justify-content: space-between;
     background: rgba(0, 32, 64, 0.8); /* transparent dark blue */
-    padding: 5px 20px;
+    padding: 5px 5px;
     position: fixed;
     top: 0;
     width: 100%;
@@ -64,7 +64,7 @@ header h1 {
 /*}*/
 
 nav {
-    margin-left: -50px;
+    margin-left: -80px;
     display: flex;
     gap: 10px;
 }
