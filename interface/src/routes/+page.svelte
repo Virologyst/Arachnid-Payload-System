@@ -17,7 +17,7 @@
         console.log(`[${type}] ${message}`);  // ✅ still visible in browser console too
     }
 
-    import { Line } from 'svelte-chartjs';
+    // import { Line } from 'svelte-chartjs';
     import Chart from 'chart.js/auto';
 
     // import {
@@ -207,49 +207,49 @@
                     {@html panelContent}
                 </div>
 
-                <div class="sensor-graph">
-                    <h3>Historic Sensor Data</h3>
-                    <Line
-                        data={{
-                            labels: historicData.map(d => new Date(d.timestamp).toLocaleTimeString()),
-                            datasets: [
-                                {
-                                    label: 'Temperature (°C)',
-                                    data: historicData.map(d => d.temperature),
-                                    borderColor: 'orange',
-                                    fill: false
-                                },
-                                {
-                                    label: 'Humidity (%)',
-                                    data: historicData.map(d => d.humidity),
-                                    borderColor: 'blue',
-                                    fill: false
-                                },
-                                {
-                                    label: 'Pressure (hPa)',
-                                    data: historicData.map(d => d.pressure),
-                                    borderColor: 'purple',
-                                    fill: false
-                                }
-                            ]
-                        }}
-                        options={{
-                            responsive: true,
-                            plugins: {
-                                legend: { display: true },
-                                tooltip: { mode: 'index', intersect: false }
-                            },
-                            scales: {
-                                x: {
-                                    title: { display: true, text: 'Timestamp' }
-                                },
-                                y: {
-                                    beginAtZero: false
-                                }
-                            }
-                        }}
-                    />
-                </div>
+<!--                <div class="sensor-graph">-->
+<!--                    <h3>Historic Sensor Data</h3>-->
+<!--                    <Line-->
+<!--                        data={{-->
+<!--                            labels: historicData.map(d => new Date(d.timestamp).toLocaleTimeString()),-->
+<!--                            datasets: [-->
+<!--                                {-->
+<!--                                    label: 'Temperature (°C)',-->
+<!--                                    data: historicData.map(d => d.temperature),-->
+<!--                                    borderColor: 'orange',-->
+<!--                                    fill: false-->
+<!--                                },-->
+<!--                                {-->
+<!--                                    label: 'Humidity (%)',-->
+<!--                                    data: historicData.map(d => d.humidity),-->
+<!--                                    borderColor: 'blue',-->
+<!--                                    fill: false-->
+<!--                                },-->
+<!--                                {-->
+<!--                                    label: 'Pressure (hPa)',-->
+<!--                                    data: historicData.map(d => d.pressure),-->
+<!--                                    borderColor: 'purple',-->
+<!--                                    fill: false-->
+<!--                                }-->
+<!--                            ]-->
+<!--                        }}-->
+<!--                        options={{-->
+<!--                            responsive: true,-->
+<!--                            plugins: {-->
+<!--                                legend: { display: true },-->
+<!--                                tooltip: { mode: 'index', intersect: false }-->
+<!--                            },-->
+<!--                            scales: {-->
+<!--                                x: {-->
+<!--                                    title: { display: true, text: 'Timestamp' }-->
+<!--                                },-->
+<!--                                y: {-->
+<!--                                    beginAtZero: false-->
+<!--                                }-->
+<!--                            }-->
+<!--                        }}-->
+<!--                    />-->
+<!--                </div>-->
 
                 <div class="logs-panel">
                     <h2>📜 Live Logs</h2>
