@@ -1,10 +1,23 @@
 <script>
     import { onMount } from 'svelte';
+    import {
+        AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+    } from 'recharts';
 
     let backendLogs = [];
     let statusA = "unknown";
     let statusB = "unknown";
     let statusC = "unknown";
+
+    async function fetchTargets() {
+        const res = await fetch("/targets");
+        const data = await res.json();
+
+        // Example mapping: first 3 detections → A, B, C
+        statusA = data[0]?.type || "unknown";
+        statusB = data[1]?.type || "unknown";
+        statusC = data[2]?.type || "unknown";
+    }
 
     async function fetchBackendLogs() {
         const res = await fetch('/logs');
@@ -133,6 +146,7 @@
         setInterval(fetchThumbnails, 4000); // 4s
         fetchBackendLogs();
         checkMobile();
+        fetchTargets();
         window.addEventListener("resize", checkMobile);
         return () => window.removeEventListener("resize", checkMobile);
     });
@@ -175,7 +189,7 @@
             <div class="panel-pane">
 
                 <div class="tab-buttons">
-                    <button on:click={() => loadPanel('sensors')}>Sensors</button>
+                    <button on:click={() => loadPanel('sensors')}>Graph</button>
                     <button on:click={() => loadPanel('logs')}>Logs</button>
                     <button on:click={() => loadPanel('targets')}>Targets</button>
                     <button on:click={() => loadPanel('system')}>System</button>
@@ -185,7 +199,24 @@
                     {#if currentView === 'sensors'}
                         <div class="panel-sensors">
                             <h2>Sensor Data (Graph Connected to Database)</h2>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <AreaChart data={historicData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis
+                                      dataKey="timestamp"
+                                      tick={{ fontSize: 10 }}
+                                      tickFormatter={(t) => new Date(t).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' })}
+                                    />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Area type="monotone" dataKey="temperature" stroke="#ff7300" fill="#ff7300" fillOpacity={0.3} />
+                                    <Area type="monotone" dataKey="humidity" stroke="#00c3ff" fill="#00c3ff" fillOpacity={0.3} />
+                                    <Area type="monotone" dataKey="pressure" stroke="#8884d8" fill="#8884d8" fillOpacity={0.2} />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
+
                     {:else if currentView === 'logs'}
                         <div class="logs-panel">
                             <h2>Live Logs</h2>
@@ -200,7 +231,23 @@
                             </div>
                         </div>
                     {:else if currentView === 'targets'}
-                        <div><h2>Targets</h2><p>No targets detected yet.</p></div>
+                      <div class="targets-panel">
+                        <h2>Active Targets</h2>
+                        <div class="targets-grid">
+                          <div class="target-card">
+                            <h3>A</h3>
+                            <p class="target-status">{statusA}</p>
+                          </div>
+                          <div class="target-card">
+                            <h3>B</h3>
+                            <p class="target-status">{statusB}</p>
+                          </div>
+                          <div class="target-card">
+                            <h3>C</h3>
+                            <p class="target-status">{statusC}</p>
+                          </div>
+                        </div>
+                      </div>
                     {:else if currentView === 'system'}
                         <div>
                             <h2>System Controls</h2>

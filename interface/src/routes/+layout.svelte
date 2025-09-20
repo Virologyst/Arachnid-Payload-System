@@ -18,6 +18,7 @@
 	<nav class="nav">
 		<a href="/" class="nav-btn">Dashboard</a>
 		<a href="/images" class="nav-btn">Images</a>
+		<a href="/graph" class="nav-btn">Graph</a>
 	</nav>
 
 <!--	<div class={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>-->
@@ -33,6 +34,7 @@
 	<a href="/" on:click={() => mobileMenuOpen = false}>Dashboard</a>
 	<a href="/images" on:click={() => mobileMenuOpen = false}>Images</a>
 	<a href="/panel" on:click={() => mobileMenuOpen = false}>Data</a>
+	<a href="/graph" on:click={() => mobileMenuOpen = false}>Graph</a>
 </div>
 
 <slot />
