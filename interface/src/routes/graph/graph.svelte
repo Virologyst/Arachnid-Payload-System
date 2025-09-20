@@ -18,7 +18,7 @@
 </script>
 
 <style>
-    @import '../../styling.css';
+    @import '../../../styling.css';
 
     .full-page-graph {
         width: 100%;

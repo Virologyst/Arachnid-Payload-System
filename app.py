@@ -178,7 +178,6 @@ def video_feed():
 def get_enviro_data():
     """Read Enviro+ and return JSON."""
     try:
-        # ✅ Correct Pimoroni calls
         temperature = round(bme280_sensor.get_temperature(), 1)
         pressure = round(bme280_sensor.get_pressure(), 1)
         humidity = round(bme280_sensor.get_humidity(), 1)

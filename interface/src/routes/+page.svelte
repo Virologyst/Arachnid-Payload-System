@@ -2,10 +2,19 @@
     import { onMount } from 'svelte';
 
     let backendLogs = [];
+    let statusA = "unknown";
+    let statusB = "unknown";
+    let statusC = "unknown";
 
     async function fetchBackendLogs() {
         const res = await fetch('/logs');
         backendLogs = await res.json();
+    }
+
+    let isMobile = false;
+
+    function checkMobile() {
+        isMobile = window.innerWidth <= 768;
     }
 
     let logs = [];
@@ -72,7 +81,6 @@
         enviro = newEnviro;
     }
 
-    // store bar data in an array for easy mapping
     let bars = [
         // { label: 'CO₂', key: 'co2', value: 0, max: 1000, color: 'green' },
         { label: 'Ammonia', key: 'ammonia', value: 0, max: 1000, color: 'green' },
@@ -124,6 +132,9 @@
         fetchThumbnails();
         setInterval(fetchThumbnails, 4000); // 4s
         fetchBackendLogs();
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
     });
 
     function toggleMobileMenu() {
@@ -142,10 +153,8 @@
 <main>
 
     <div class="sidebar">
-<!--        <button class="capture-btn" on:click={captureImage}>Capture Image</button>-->
         {#each thumbnails as thumb}
             <img src={`/images/${thumb}`} alt="Thumbnail" on:click={() => openModal(thumb)}>
-<!--            <img src="images/thumb1.jpg" alt="Thumbnail">&ndash;&gt;-->
         {/each}
     </div>
 
@@ -166,10 +175,10 @@
             <div class="panel-pane">
 
                 <div class="tab-buttons">
-                    <button on:click={() => loadPanel('sensors')}>📊 Sensors</button>
-                    <button on:click={() => loadPanel('logs')}>📜 Logs</button>
-                    <button on:click={() => loadPanel('targets')}>🎯 Targets</button>
-                    <button on:click={() => loadPanel('system')}>⚙ System</button>
+                    <button on:click={() => loadPanel('sensors')}>Sensors</button>
+                    <button on:click={() => loadPanel('logs')}>Logs</button>
+                    <button on:click={() => loadPanel('targets')}>Targets</button>
+                    <button on:click={() => loadPanel('system')}>System</button>
                 </div>
 
                 <div id="dynamicPanel">
@@ -195,9 +204,8 @@
                     {:else if currentView === 'system'}
                         <div>
                             <h2>System Controls</h2>
-<!--                            <button on:click={updateDevice}>🔄 Update & Restart</button>-->
-                            <button on:click={updateDevice} disabled={loading} class="update-btn">
-                                🔄 Update & Restart
+                           <button on:click={updateDevice} disabled={loading} class="update-btn">
+                                Update & Restart
                             </button>
 
                             {#if loading}
@@ -256,17 +264,7 @@
 
                 <div class="enviro-card">
                     <h2>Enviro+ Live Data</h2>
-<!--                    <ul>-->
-<!--                        <li>Temp: {enviro.temperature} °C</li>-->
-<!--                        <li>Humidity: {enviro.humidity} %</li>-->
-<!--                        <li>Pressure: {enviro.pressure} hPa</li>-->
-<!--                        <li>Oxidising: {enviro.oxidising} kΩ</li>-->
-<!--                        <li>Reducing: {enviro.reducing} kΩ</li>-->
-<!--                        <li>Ammonia: {enviro.nh3} kΩ</li>-->
-<!--                        <li>Light: {enviro.lux} lux</li>-->
-<!--                        <li>Proximity: {enviro.proximity}</li>-->
-<!--                    </ul>-->
-                        <ul>
+                        <ul class="readings-list">
                             <li>🌡 Temperature: {enviro.temperature} °C</li>
                             <li>💧 Humidity: {enviro.humidity} %</li>
                             <li>📈 Pressure: {enviro.pressure} hPa</li>
@@ -281,30 +279,77 @@
             </div>
         </div>
 
-        <div class="bottom-row">
-            <div class="readings-table">
-                <table border="1" cellpadding="5">
-                    <thead>
-                        <tr><th>Targets</th><th>Average Readings</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>A:</td><td></td></tr>
-                        <tr><td>B:</td><td></td></tr>
-                        <tr><td>C:</td><td></td></tr>
-                    </tbody>
-                </table>
-            </div>
+        {#if isMobile}
 
-            <div class="status-bars">
-                {#each bars as bar}
-                    <div class="status-bar">
-                        <div class="bar">
-                            <div class="bar-fill" style="height: {bar.value}%; background-color: {bar.color};"></div>
-                        </div>
-                        <div class="bar-label">{bar.label}</div>
+            <div class="bottom-row">
+                <div class="readings-table">
+                    <table border="1" cellpadding="5">
+                        <thead>
+                            <tr><th>Targets</th><th>Current Status</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="label">A:</td><td class="status">{statusA}</td></tr>
+                            <tr><td class="label">B:</td><td class="status">{statusB}</td></tr>
+                            <tr><td class="label">C:</td><td class="status">{statusC}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="enviro-card-mobile">
+    <!--              <h3>Enviro+ Data</h3>-->
+                      <ul class="readings-list">
+                        <li>🌡 Temperature: {enviro.temperature} °C</li>
+                        <li>💧 Humidity: {enviro.humidity} %</li>
+                        <li>📈 Pressure: {enviro.pressure} hPa</li>
+                        <li>🟠 Oxidising Gas: {enviro.oxidising} kΩ</li>
+                        <li>🔵 Reducing Gas: {enviro.reducing} kΩ</li>
+                        <li>🟢 NH3: {enviro.nh3} kΩ</li>
+                        <li>💡 Light: {enviro.lux} lux</li>
+                        <li>📏 Proximity: {enviro.proximity}</li>
+                      </ul>
                     </div>
-                {/each}
-            </div>
+                  </div>
+
+                <div class="status-bars">
+                    {#each bars as bar}
+                        <div class="status-bar">
+                            <div class="bar">
+                                <div class="bar-fill" style="height: {bar.value}%; background-color: {bar.color};"></div>
+                            </div>
+                            <div class="bar-label">{bar.label}</div>
+                        </div>
+                    {/each}
+                </div>
+
+            {:else}
+
+                <div class="bottom-row">
+                    <div class="readings-table">
+                        <table border="1" cellpadding="5">
+                            <thead>
+                                <tr><th>🎯 Targets</th><th>Current Status</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="label">A:</td><td class="status">{statusA}</td></tr>
+                                <tr><td class="label">B:</td><td class="status">{statusB}</td></tr>
+                                <tr><td class="label">C:</td><td class="status">{statusC}</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="status-bars">
+                        {#each bars as bar}
+                            <div class="status-bar">
+                                <div class="bar">
+                                    <div class="bar-fill" style="height: {bar.value}%; background-color: {bar.color};"></div>
+                                </div>
+                                <div class="bar-label">{bar.label}</div>
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+
+            {/if}
 
         {#if modalImage}
             <div class="modal">

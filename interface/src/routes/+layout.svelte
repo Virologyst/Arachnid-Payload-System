@@ -20,12 +20,19 @@
 		<a href="/images" class="nav-btn">Images</a>
 	</nav>
 
+<!--	<div class={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>-->
+<!--	  <a href="/" on:click={() => mobileMenuOpen = false}>Dashboard</a>-->
+<!--	  <a href="/images" on:click={() => mobileMenuOpen = false}>Gallery</a>-->
+<!--	</div>-->
+
 	<div class="hamburger" on:click={() => mobileMenuOpen = !mobileMenuOpen}>☰</div>
+
 </header>
 
 <div class={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
-	<a href="/" on:click={() => mobileMenuOpen = false}>📊 Dashboard</a>
-	<a href="/images" on:click={() => mobileMenuOpen = false}>📸 Images</a>
+	<a href="/" on:click={() => mobileMenuOpen = false}>Dashboard</a>
+	<a href="/images" on:click={() => mobileMenuOpen = false}>Images</a>
+	<a href="/panel" on:click={() => mobileMenuOpen = false}>Data</a>
 </div>
 
 <slot />
