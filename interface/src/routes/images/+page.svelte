@@ -126,6 +126,13 @@
 	.close-btn { background: #555; }
 	.delete-btn:hover { background: #ff3333; }
 	.close-btn:hover { background: #777; }
+
+	@media (max-width: 600px) {
+	  .gallery {
+		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+	  }
+	}
+
 </style>
 
 <h1 style="text-align: center; margin-top: 20px;">Image Gallery</h1>
