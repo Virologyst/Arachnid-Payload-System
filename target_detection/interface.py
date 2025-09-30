@@ -39,7 +39,7 @@ class TargetDetectionInterface:
         self._thr: Optional[threading.Thread] = None
         self._stop = threading.Event()
 
-    def get_image_bytes(self) -> bytes: #cv2.imencode output
+    def get_image_bytes(self) -> bytes | None: #cv2.imencode output
         with self._lock:
             return self._latest_image
     

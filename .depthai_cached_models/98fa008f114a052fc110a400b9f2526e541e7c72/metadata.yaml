@@ -1,0 +1,6 @@
+hash: 69b86b29492fdd2a05161c832882cda8
+model_id: face58c4-45ab-42a0-bafc-19f9fee8a034
+model_version_id: 3127ba70-0899-4922-87bc-2ec4368bc0a0
+model_instance_id: 5db0eeed-b349-44a1-80c0-bf79821e1bec
+downloaded_files:
+  - yolov6n_coco_416x416.rvc2.tar.xz

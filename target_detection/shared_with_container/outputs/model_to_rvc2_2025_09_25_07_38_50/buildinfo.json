@@ -3,7 +3,7 @@
         "model_optimizer": [
             "mo",
             "--output_dir",
-            "shared_with_container/outputs/model_to_rvc2_2025_09_25_04_34_14/intermediate_outputs",
+            "shared_with_container/outputs/model_to_rvc2_2025_09_25_07_38_50/intermediate_outputs",
             "--output",
             "output0",
             "--compress_to_fp16",
@@ -15,7 +15,7 @@
             "images[0.0039215686,0.0039215686,0.0039215686]",
             "--reverse_input_channels",
             "--input_model",
-            "shared_with_container/outputs/model_to_rvc2_2025_09_25_04_34_14/intermediate_outputs/model-simplified.onnx"
+            "shared_with_container/outputs/model_to_rvc2_2025_09_25_07_38_50/intermediate_outputs/model-simplified.onnx"
         ],
         "compile_tool": [
             "compile_tool",
@@ -24,11 +24,11 @@
             "-ip",
             "U8",
             "-m",
-            "shared_with_container/outputs/model_to_rvc2_2025_09_25_04_34_14/intermediate_outputs/model-simplified.xml",
+            "shared_with_container/outputs/model_to_rvc2_2025_09_25_07_38_50/intermediate_outputs/model-simplified.xml",
             "-o",
-            "shared_with_container/outputs/model_to_rvc2_2025_09_25_04_34_14/intermediate_outputs/blobs/model_8shave.blob",
+            "shared_with_container/outputs/model_to_rvc2_2025_09_25_07_38_50/intermediate_outputs/blobs/model_8shave.blob",
             "-c",
-            "/tmp/tmpkm1s8y2c.conf"
+            "/tmp/tmpsq0w3w1z.conf"
         ]
     },
     "modelconverter_version": "0.4.4",

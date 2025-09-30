@@ -1,0 +1,165 @@
+2025-09-25 12:52:08 [INFO] Simplifying ONNX. | simplify_onnx:122
+2025-09-25 12:52:08 [INFO] ONNX successfully simplified. | simplify_onnx:139
+2025-09-25 12:52:08 [INFO] Saving simplified ONNX to shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08/intermediate_outputs/model-simplified.onnx | simplify_onnx:143
+2025-09-25 12:52:08 [INFO] Loading model: model-simplified | load_onnx:265
+2025-09-25 12:52:10 [INFO] ONNX model has been optimized for RVC2. | _export_openvino_ir:133
+2025-09-25 12:52:10 [INFO] Executing `mo --output_dir shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08/intermediate_outputs --output output0 --compress_to_fp16 --input images[1 3 416 416]{f32} --reverse_input_channels --input_model shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08/intermediate_outputs/model-simplified.onnx` | subprocess_run:46
+2025-09-25 12:52:10 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:10 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:11 [INFO] Check for a new version of Intel(R) Distribution of OpenVINO(TM) toolkit here https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit/download.html?cid=other&source=prod&campid=ww_2023_bu_IOTG_OpenVINO-2022-3&content=upg_all&medium=organic or on https://github.com/openvinotoolkit/openvino | _reader:66
+2025-09-25 12:52:11 [INFO] [ INFO ] The model was converted to IR v11, the latest model format that corresponds to the source DL framework input/output format. While IR v11 is backwards compatible with OpenVINO Inference Engine API v1.0, please use API v2.0 (as of 2022.1) to take advantage of the latest improvements in IR v11. | _reader:66
+2025-09-25 12:52:11 [INFO] Find more information about API v2.0 and IR v11 at https://docs.openvino.ai/latest/openvino_2_0_transition_guide.html | _reader:66
+2025-09-25 12:52:11 [INFO] [ SUCCESS ] Generated IR version 11 model. | _reader:66
+2025-09-25 12:52:11 [INFO] [ SUCCESS ] XML file: /app/shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08/intermediate_outputs/model-simplified.xml | _reader:66
+2025-09-25 12:52:11 [INFO] [ SUCCESS ] BIN file: /app/shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08/intermediate_outputs/model-simplified.bin | _reader:66
+2025-09-25 12:52:11 [INFO] Command `mo` finished in 1.00 seconds with return code 0. | subprocess_run:105
+2025-09-25 12:52:11 [INFO] OpenVINO IR exported to shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08 | _export_openvino_ir:180
+2025-09-25 12:52:11 [INFO] Executing `compile_tool -d MYRIAD -ip U8 -m shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08/intermediate_outputs/model-simplified.xml -o shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08/intermediate_outputs/blobs/model_8shave.blob -c /tmp/tmpt5xyzs_b.conf` | subprocess_run:46
+2025-09-25 12:52:11 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:11 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:11 [INFO] OpenVINO Runtime version ......... 2022.3.0 | _reader:66
+2025-09-25 12:52:11 [INFO] Build ........... 2022.3.0-9213-bdadcd7583c-releases/2022/3 | _reader:66
+2025-09-25 12:52:11 [INFO] Network inputs: | _reader:66
+2025-09-25 12:52:11 [INFO] images : u8 / [...] | _reader:66
+2025-09-25 12:52:11 [INFO] Network outputs: | _reader:66
+2025-09-25 12:52:11 [INFO] output0/sink_port_0 : f16 / [...] | _reader:66
+2025-09-25 12:52:11 [INFO] Done. LoadNetwork time elapsed: 79 ms | _reader:66
+2025-09-25 12:52:11 [INFO] Command `compile_tool` finished in 0.21 seconds with return code 0. | subprocess_run:105
+2025-09-25 12:52:11 [INFO] Blob compiled to shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08/intermediate_outputs/blobs/model_8shave.blob | compile_blob:281
+2025-09-25 12:52:11 [INFO] Compiling superblob. | compile_superblob:302
+2025-09-25 12:52:11 [INFO] Available RAM: 84.73 GB | compile_superblob:320
+2025-09-25 12:52:11 [INFO] Base compile peak: 65.1 MB | compile_superblob:321
+2025-09-25 12:52:11 [INFO] Using 20 workers for superblob compilation | compile_superblob:322
+2025-09-25 12:52:11 [INFO] Compiling 1-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:11 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:11 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:13 [INFO] Compiling 2-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:13 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:13 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:14 [INFO] Compiling 3-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:14 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:14 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:15 [INFO] Compiling 4-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:15 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:15 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:16 [INFO] Compiling 5-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:16 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:16 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:17 [INFO] Compiling 6-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:17 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:17 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:19 [INFO] Compiling 7-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:19 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:19 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:20 [INFO] Compiling 9-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:20 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:20 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:21 [INFO] Compiling 10-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:21 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:21 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:22 [INFO] Compiling 11-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:22 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:22 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:23 [INFO] Compiling 12-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:23 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:23 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:25 [INFO] Compiling 13-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:25 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:25 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:26 [INFO] Compiling 14-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:26 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:26 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:27 [INFO] Compiling 15-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:27 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:27 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:28 [INFO] Compiling 16-shave patch... | _superblob_compile_step:424
+2025-09-25 12:52:28 [WARNING] /usr/local/lib/python3.10/subprocess.py:961: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stdout = io.open(c2pread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:28 [WARNING] /usr/local/lib/python3.10/subprocess.py:966: RuntimeWarning: line buffering (buffering=1) isn't supported in binary mode, the default buffer size will be used
+  self.stderr = io.open(errread, 'rb', bufsize)
+ | _custom_warning_handler:104
+2025-09-25 12:52:29 [INFO] Compiled 6-shave patch in 0.20 s, peak RAM 51.0 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 3-shave patch in 0.30 s, peak RAM 104.5 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 7-shave patch in 0.20 s, peak RAM 50.8 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 5-shave patch in 0.20 s, peak RAM 51.2 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 4-shave patch in 0.20 s, peak RAM 50.6 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 2-shave patch in 0.30 s, peak RAM 72.6 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 14-shave patch in 0.20 s, peak RAM 50.5 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 12-shave patch in 0.20 s, peak RAM 51.1 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 1-shave patch in 0.60 s, peak RAM 108.5 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 9-shave patch in 0.20 s, peak RAM 51.2 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 10-shave patch in 0.20 s, peak RAM 53.0 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 11-shave patch in 0.20 s, peak RAM 50.8 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 13-shave patch in 0.20 s, peak RAM 50.6 MB | compile_superblob:365
+2025-09-25 12:52:29 [INFO] Compiled 15-shave patch in 0.20 s, peak RAM 51.0 MB | compile_superblob:365
+2025-09-25 12:52:34 [INFO] Compiled 16-shave patch in 0.20 s, peak RAM 50.5 MB | compile_superblob:365
+2025-09-25 12:52:34 [INFO] Superblob compiled in 22.39 seconds. | compile_superblob:371
+2025-09-25 12:52:34 [INFO] Superblob compiled to shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08/model.superblob | compile_superblob:404
+2025-09-25 12:52:34 [INFO] Converting to NN archive | generate_archive:431
+2025-09-25 12:52:38 [INFO] Model exported to shared_with_container/outputs/model_to_rvc2_2025_09_25_12_52_08/model.rvc2.tar.xz | generate_archive:455
+2025-09-25 12:52:38 [INFO] Peak RAM usage: 1296.93 MB | convert:222
