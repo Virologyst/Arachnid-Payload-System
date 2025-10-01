@@ -1,0 +1,19 @@
+# Import Libraries needed to run code
+import gpiozero import AngularServo
+import curses
+from time import sleep
+
+# Initialise Servo
+servo = AngularServo(12, min_angle=0, max_angle=360, min_pulse_width=0.0005, max_pulse_width=0.0025)
+
+#Define functions for other subsystems to call in order to control drill
+def Drill_Down():
+	#Drill Lowers
+        servo.angle = 360
+def Drill_Up():
+        #Drill Lifts
+        servo.angle = 0
+def Drill_Stop():
+        #Drill Stops
+        servo.angle = 180
+
