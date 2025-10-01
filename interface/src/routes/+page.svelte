@@ -199,22 +199,22 @@
                     {#if currentView === 'sensors'}
                         <div class="panel-sensors">
                             <h2>Sensor Data (Graph Connected to Database)</h2>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={historicData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis
-                                      dataKey="timestamp"
-                                      tick={{ fontSize: 10 }}
-                                      tickFormatter={(t) => new Date(t).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' })}
-                                    />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Legend />
-                                    <Area type="monotone" dataKey="temperature" stroke="#ff7300" fill="#ff7300" fillOpacity={0.3} />
-                                    <Area type="monotone" dataKey="humidity" stroke="#00c3ff" fill="#00c3ff" fillOpacity={0.3} />
-                                    <Area type="monotone" dataKey="pressure" stroke="#8884d8" fill="#8884d8" fillOpacity={0.2} />
-                                </AreaChart>
-                            </ResponsiveContainer>
+<!--                            <ResponsiveContainer width="100%" height={300}>-->
+<!--                                <AreaChart data={historicData}>-->
+<!--                                    <CartesianGrid strokeDasharray="3 3" />-->
+<!--                                    <XAxis-->
+<!--                                      dataKey="timestamp"-->
+<!--                                      tick={{ fontSize: 10 }}-->
+<!--                                      tickFormatter={(t) => new Date(t).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' })}-->
+<!--                                    />-->
+<!--                                    <YAxis />-->
+<!--                                    <Tooltip />-->
+<!--                                    <Legend />-->
+<!--                                    <Area type="monotone" dataKey="temperature" stroke="#ff7300" fill="#ff7300" fillOpacity={0.3} />-->
+<!--                                    <Area type="monotone" dataKey="humidity" stroke="#00c3ff" fill="#00c3ff" fillOpacity={0.3} />-->
+<!--                                    <Area type="monotone" dataKey="pressure" stroke="#8884d8" fill="#8884d8" fillOpacity={0.2} />-->
+<!--                                </AreaChart>-->
+<!--                            </ResponsiveContainer>-->
                         </div>
 
                     {:else if currentView === 'logs'}
