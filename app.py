@@ -23,6 +23,32 @@ from enviroplus import gas
 from bme280 import BME280
 from ltr559 import LTR559
 
+# --- Drill service ---
+# Import Libraries needed to run code
+import gpiozero import AngularServo
+# import curses
+# from time import sleep
+
+# Initialise Servo
+# servo = AngularServo(12, min_angle=0, max_angle=360, min_pulse_width=0.0005, max_pulse_width=0.0025)
+
+# Initialize Servo (GPIO pin 12)
+servo = AngularServo(
+    12,
+    min_angle=0,
+    max_angle=360,
+    min_pulse_width=0.0005,
+    max_pulse_width=0.0025
+)
+
+def Drill():
+    print("Starting drill sequence...")
+    servo.angle = 360
+    time.sleep(93)  # 93 which is almost 1.5 minutes
+    servo.angle = 0
+    time.sleep(93)
+    servo.angle = 90
+    print("Drill sequence completed.")
 
 # ───── App Setup ─────
 app = Flask(__name__, static_folder="static", static_url_path="")
@@ -213,6 +239,15 @@ bme280_sensor = BME280(i2c_dev=bus)
 device, qRgb = init_depthai()
 
 # ──────────────── ROUTES ────────────────
+
+@app.route('/drill', methods=['POST'])
+def drill_endpoint():
+    try:
+        Drill()
+        return jsonify({"status": "success", "message": "Drill activated"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route("/logs")
 def get_logs():
     """Return last 50 backend logs."""

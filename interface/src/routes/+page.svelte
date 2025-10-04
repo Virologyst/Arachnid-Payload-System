@@ -1,8 +1,5 @@
 <script>
     import { onMount } from 'svelte';
-    import {
-        AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-    } from 'recharts';
 
     let backendLogs = [];
     let statusA = "unknown";
@@ -154,6 +151,17 @@
     function toggleMobileMenu() {
         mobileMenuOpen = !mobileMenuOpen;
     }
+
+    async function runDrill() {
+        try {
+            const res = await fetch('/drill', { method: 'POST' });
+            const data = await res.json();
+            log(`Drill: ${data.message}`, data.status === 'success' ? 'ACTION' : 'ERROR');
+        } catch (e) {
+            log(`Drill error: ${e}`, 'ERROR');
+        }
+    }
+
 </script>
 
 <style>
@@ -181,6 +189,7 @@
                     🌡 {enviro.temperature}°C | 💧 {enviro.humidity}% | 📈 {enviro.pressure}hPa
                 </div>
                 <div class="capture-overlay">
+                    <button class="drill-btn" on:click={runDrill}>🛠 Run Drill</button>
                     <button class="capture-btn" on:click={captureImage}>📸 Capture Image</button>
                 </div>
             </div>
