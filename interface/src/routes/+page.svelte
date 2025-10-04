@@ -189,7 +189,7 @@
                     🌡 {enviro.temperature}°C | 💧 {enviro.humidity}% | 📈 {enviro.pressure}hPa
                 </div>
                 <div class="capture-overlay">
-                    <button class="drill-btn" on:click={runDrill}>🛠 Run Drill</button>
+                    <button class="drill-btn" on:click={runDrill}>Run Drill</button>
                     <button class="capture-btn" on:click={captureImage}>📸 Capture Image</button>
                 </div>
             </div>

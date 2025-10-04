@@ -24,3 +24,30 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# ─── IDE Files ─────────────────────────
+.idea/
+*.iml
+
+# ─── Python Stuff ──────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.db
+
+# ─── Node / SvelteKit ──────────────────
+node_modules/
+.build/
+static/_app/
+!.gitkeep
+
+# ─── Asset Ignorables ──────────────────
+static/loading.gif
+static/logo.png
+static/thumb1.jpg
+static/images/*.jpeg
+static/images/*.jpg
+static/images/*.png
+
