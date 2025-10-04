@@ -25,6 +25,11 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
+# Data
+/database
+egh455.db
+/database/egh455.db
+
 # ─── IDE Files ─────────────────────────
 .idea/
 *.iml
@@ -36,11 +41,11 @@ __pycache__/
 *.pyd
 *.log
 *.db
-egh455.db
+
+
 
 # ─── Node / SvelteKit ──────────────────
 node_modules/
-database
 .build/
 static/_app/
 !.gitkeep
