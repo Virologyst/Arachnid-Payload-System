@@ -14,3 +14,56 @@ interface/node_modules/
 interface/.svelt-kit/
 interface/build/
 
+node_modules
+
+/.venv
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Data
+/database
+egh455.db
+/database/egh455.db
+
+# ─── IDE Files ─────────────────────────
+.idea/
+*.iml
+
+# ─── Python Stuff ──────────────────────
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.db
+
+# ─── Node / SvelteKit ──────────────────
+.build/
+static/_app/
+!.gitkeep
+
+# ─── Asset Ignorables ──────────────────
+static/loading.gif
+static/logo.png
+static/thumb1.jpg
+static/images/*.jpeg
+static/images/*.jpg
+static/images/*.png
