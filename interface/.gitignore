@@ -40,6 +40,7 @@ egh455.db
 
 # ─── Node / SvelteKit ──────────────────
 node_modules/
+database
 .build/
 static/_app/
 !.gitkeep
