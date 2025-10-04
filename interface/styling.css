@@ -515,6 +515,10 @@ main {
 /* === RESPONSIVE DESIGN === */
 @media (max-width: 768px) {
 
+    .sensor-overlay {
+        display: none;
+    }
+
     .enviro-card-mobile {
         display: flex;
         flex: 2;
