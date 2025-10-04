@@ -96,7 +96,7 @@
         // { label: 'Ammonia', key: 'ammonia', value: 0, max: 1000, color: 'green' },
         { label: 'Temp', key: 'temperature', value: 0, max: 100, color: 'green' },
         { label: 'Humidity', key: 'humidity', value: 0, max: 100, color: 'green' },
-        { label: 'NH3', key: 'nh3', value: 0, max: 800, color: 'green' },
+        { label: 'NH3', key: 'nh3', value: 0, max: 2000, color: 'green' },
         { label: 'Light', key: 'lux', value: 0, max: 500, color: 'green' }
     ];
 
