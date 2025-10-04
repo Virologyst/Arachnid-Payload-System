@@ -153,16 +153,6 @@ main {
 }
 
 /* === CAMERA PANE === */
-.drill-btn {
-    margin-right: 10px;
-    background-color: #5c5;
-    color: black;
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-}
 
 .camera-pane {
     flex: 2;
@@ -374,6 +364,24 @@ main {
     margin-right: 10px;
 }
 
+.capture-btn:hover {
+    background: #ff6600;
+}
+
+.drill-btn {
+    margin-right: 10px;
+    background-color: #5c5;
+    color: black;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.drill-btn:hover {
+    background: #97bd7e;
+}
 
 .readings-table {
     flex: 1;
@@ -399,9 +407,7 @@ main {
     padding: 0;
 }
 
-.capture-btn:hover {
-    background: #ff6600;
-}
+
 
 /* Thumbnails */
 .sidebar img {
