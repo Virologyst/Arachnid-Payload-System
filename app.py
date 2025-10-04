@@ -23,7 +23,26 @@ from enviroplus import gas
 from bme280 import BME280
 from ltr559 import LTR559
 
-# --- Drill service ---
+# --- Enviro LCD (Charlie) ---
+
+import socket
+from PIL import Image, ImageDraw, ImageFont
+from ST7735 import ST7735
+
+# Init display
+disp = ST7735(port=0, cs=0, dc=9, backlight=12, rotation=90)
+disp.begin()
+
+# Get IP
+ip = socket.gethostbyname(socket.gethostname())
+
+# Draw IP
+img = Image.new("RGB", (160, 80))
+draw = ImageDraw.Draw(img)
+draw.text((5, 30), f"IP: {ip}", fill=(255, 255, 255))
+disp.display(img)
+
+# --- Drill service (Nicky) ---
 # Import Libraries needed to run code
 from gpiozero import AngularServo
 # import curses
