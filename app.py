@@ -25,7 +25,7 @@ from ltr559 import LTR559
 
 # --- Drill service ---
 # Import Libraries needed to run code
-import gpiozero import AngularServo
+from gpiozero import AngularServo
 # import curses
 # from time import sleep
 
