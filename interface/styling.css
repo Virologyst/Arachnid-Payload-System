@@ -351,6 +351,7 @@ main {
 }
 
 .capture-btn {
+    width: 200px;
     pointer-events: auto;
     padding: 10px 20px;
     font-size: 1.2em;
@@ -369,6 +370,7 @@ main {
 }
 
 .drill-btn {
+    width: 200px;
     pointer-events: auto;
     margin-right: 10px;
     background-color: #5c5;
@@ -514,6 +516,10 @@ main {
 
 /* === RESPONSIVE DESIGN === */
 @media (max-width: 768px) {
+
+    .capture-btn .drill-btn {
+        width: 180px;
+    }
 
     .sensor-overlay {
         display: none;
