@@ -36,6 +36,7 @@ __pycache__/
 *.pyd
 *.log
 *.db
+egh455.db
 
 # ─── Node / SvelteKit ──────────────────
 node_modules/
