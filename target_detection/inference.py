@@ -6,7 +6,7 @@ import numpy as np
 import cv2, time, math
 from collections import deque
 
-from interface import TargetDetectionInterface, Detection, DetectionType
+from .interface import TargetDetectionInterface, Detection, DetectionType
 
 # =========================
 # Config
@@ -17,22 +17,74 @@ NUM_CLASSES = 6
 
 CONF_THRESH = 0.3
 
-
-
-
-
 class TargetDetection(TargetDetectionInterface):
-    def __init__(self, cb:Optional[Callable]=None, frames_by_seq: dict[int, dai.ImgFrame] = {}, 
-                 nn_by_seq: dict[int, dai.NNData] = {}, MAX_BUF = 16):
+    # def __init__(self, cb:Optional[Callable]=None, frames_by_seq: dict[int, dai.ImgFrame] = {},
+    #              nn_by_seq: dict[int, dai.NNData] = {}, MAX_BUF = 16):
+    #     super().__init__(cb)
+    #     superblob_path = Path(__file__).parent / "model.rvc2.tar.xz"
+    #     assert superblob_path.exists(), f"Superblob path {superblob_path} does not exist!"
+    #
+    #     device = dai.Device()
+    #     platform = device.getPlatform()
+    #     img_frame_type = dai.ImgFrame.Type.BGR888p if platform.name != "RVC4" else dai.ImgFrame.Type.BGR888i
+    #
+    #     pipeline = dai.Pipeline(device)
+    #     print(f"--------------------- Called pipeline...")
+    #     cam = pipeline.create(dai.node.Camera).build()
+    #     cam_out = cam.requestOutput((INPUT_H, INPUT_W), type=img_frame_type, fps=30)
+    #     nn_archive = dai.NNArchive(str(superblob_path))
+    #     nn_with_parser = pipeline.create(ParsingNeuralNetwork).build(
+    #         cam_out,
+    #         nn_archive
+    #     )
+    #
+    #     self.label_encoding = {k: v for k, v in enumerate(nn_archive.getConfig().model.heads[0].metadata.classes)}
+    #     bridge = pipeline.create(ImgDetectionsBridge).build(nn_with_parser.out)
+    #     bridge.setLabelEncoding(self.label_encoding)
+    #
+    #     # xout_frame = pipeline.create(dai.node.XLinkOut)
+    #     xout_frame = pipeline.createXLinkOut()
+    #     xout_frame.setStreamName("frames")
+    #     cam_out.link(xout_frame.input)
+    #
+    #     # xout_det = pipeline.create(dai.node.XLinkOut)
+    #     xout_det = pipeline.createXLinkOut()
+    #     xout_det.setStreamName("detections")
+    #     bridge.out.link(xout_det.input)
+    #
+    #     self.q_frame = device.getOutputQueue(name="frames", maxSize=4, blocking=False)
+    #     self.q_det = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
+    #
+    #     self.frames = {}
+    #     self.detections = {}
+    #     self.order = deque()
+    #     self.buffer_size = 60
+    #
+    #     pipeline.start()
+    #     while not pipeline.isRunning():
+    #         time.sleep(0.01)
+
+    def __init__(self, cb: Optional[Callable] = None, frames_by_seq: dict[int, dai.ImgFrame] = {},
+                 nn_by_seq: dict[int, dai.NNData] = {}, MAX_BUF=16):
         super().__init__(cb)
         superblob_path = Path(__file__).parent / "model.rvc2.tar.xz"
         assert superblob_path.exists(), f"Superblob path {superblob_path} does not exist!"
 
-        device = dai.Device()
+        print("aaa", flush=True)
+
+        pipeline = dai.Pipeline()
+
+        # only create the device *after* pipeline definition
+        device = dai.Device(pipeline)
         platform = device.getPlatform()
         img_frame_type = dai.ImgFrame.Type.BGR888p if platform.name != "RVC4" else dai.ImgFrame.Type.BGR888i
-        
-        pipeline = dai.Pipeline()
+
+        # device = dai.Device()
+        # platform = device.getPlatform()
+        # pipeline = dai.Pipeline(device)
+        # img_frame_type = dai.ImgFrame.Type.BGR888p if platform.name != "RVC4" else dai.ImgFrame.Type.BGR888i
+
+
         cam = pipeline.create(dai.node.Camera).build()
         cam_out = cam.requestOutput((INPUT_H, INPUT_W), type=img_frame_type, fps=30)
         nn_archive = dai.NNArchive(str(superblob_path))
@@ -41,29 +93,67 @@ class TargetDetection(TargetDetectionInterface):
             nn_archive
         )
 
+        print("111", flush=True)
+
         self.label_encoding = {k: v for k, v in enumerate(nn_archive.getConfig().model.heads[0].metadata.classes)}
         bridge = pipeline.create(ImgDetectionsBridge).build(nn_with_parser.out)
         bridge.setLabelEncoding(self.label_encoding)
 
-        xout_frame = pipeline.create(dai.node.XLinkOut)
-        xout_frame.setStreamName("frames")
-        cam_out.link(xout_frame.input)
+        print("222", flush=True)
 
-        xout_det = pipeline.create(dai.node.XLinkOut)
-        xout_det.setStreamName("detections")
-        bridge.out.link(xout_det.input)
+        self.q_frame = cam_out.createOutputQueue()
+        self.q_det = bridge.out.createOutputQueue()
 
-        self.q_frame = device.getOutputQueue(name="frames", maxSize=4, blocking=False)
-        self.q_det = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
+        # self.q_frame = device.getOutputQueue(name="frames", maxSize=4, blocking=False)
+        # self.q_det = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
+
+        print("333", flush=True)
 
         self.frames = {}
         self.detections = {}
         self.order = deque()
         self.buffer_size = 60
 
+        print("...", flush=True)
+
         pipeline.start()
+
+        print("bbb", flush=True)
+
         while not pipeline.isRunning():
+            print(f"Waiting for pipeline to finish...", flush=True)
             time.sleep(0.01)
+
+    # def __init__(self, cb: Optional[Callable] = None, frames_by_seq: dict[int, dai.ImgFrame] = {},
+    #              nn_by_seq: dict[int, dai.NNData] = {}, MAX_BUF=16):
+    #     super().__init__(cb)
+    #     superblob_path = Path(__file__).parent / "model.rvc2.tar.xz"
+    #     assert superblob_path.exists(), f"Superblob path {superblob_path} does not exist!"
+    #
+    #     pipeline = dai.Pipeline()
+    #     cam = pipeline.create(dai.node.Camera).build()
+    #     cam_out = cam.requestOutput((INPUT_H, INPUT_W), type=dai.ImgFrame.Type.BGR888p, fps=30)
+    #     nn_archive = dai.NNArchive(str(superblob_path))
+    #     nn_with_parser = pipeline.create(ParsingNeuralNetwork).build(
+    #         cam_out,
+    #         nn_archive
+    #     )
+    #
+    #     self.label_encoding = {k: v for k, v in enumerate(nn_archive.getConfig().model.heads[0].metadata.classes)}
+    #     bridge = pipeline.create(ImgDetectionsBridge).build(nn_with_parser.out)
+    #     bridge.setLabelEncoding(self.label_encoding)
+    #
+    #     self.q_frame = cam_out.createOutputQueue()
+    #     self.q_det = bridge.out.createOutputQueue()
+    #
+    #     self.frames = {}
+    #     self.detections = {}
+    #     self.order = deque()
+    #     self.buffer_size = 60
+    #
+    #     pipeline.start()
+    #     while not pipeline.isRunning():
+    #         time.sleep(0.01)
 
     def _pop_synced(self):
         for seq in list(self.order):
@@ -193,4 +283,4 @@ if __name__ == "__main__":
     finally:
         dummy.stop()
 
-cv2.destroyAllWindows()
+    cv2.destroyAllWindows()

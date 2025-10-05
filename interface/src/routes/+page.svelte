@@ -392,7 +392,7 @@
                     <div class="readings-table">
                         <table border="1" cellpadding="5">
                             <thead>
-                                <tr><th>🎯 Targets</th><th>Current Status</th></tr>
+                                <tr><th>Targets</th><th>Current Status</th></tr>
                             </thead>
                             <tbody>
                                 <tr><td class="label">A:</td><td class="status">{statusA}</td></tr>

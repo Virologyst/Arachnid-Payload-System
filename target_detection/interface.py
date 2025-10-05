@@ -98,9 +98,9 @@ class TargetDetectionInterface:
 			bytearray(encoded_image) + b'\r\n')
         raise RuntimeError("Failed to encode image")
 
-    def get_image_bytes(self, draw_detections: bool = True) -> bytes | None: #cv2.imencode output
+    def get_image_bytes(self, draw_detectionsFlag: bool = True) -> bytes | None: #cv2.imencode output
         with self._lock:
-            if draw_detections and self._latest_detections:
+            if draw_detectionsFlag and self._latest_detections:
                 frame = self._latest_image
                 frame = draw_detections(frame, self._latest_detections)
                 return self._encode_np_bgr_to_mjpeg(frame)
@@ -207,8 +207,8 @@ class TargetDetectionDummy(TargetDetectionInterface):
     def execute(self) -> tuple[bytes, list[Detection]]:
         image = self.make_image()
         detections = self.make_detections()
-        encoded_image = self._encode_np_bgr_to_mjpeg(image)
-        return encoded_image, detections
+        # encoded_image = self._encode_np_bgr_to_mjpeg(image)
+        return image, detections
 
     
 if __name__ == "__main__":
