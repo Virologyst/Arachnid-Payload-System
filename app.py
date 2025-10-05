@@ -47,7 +47,7 @@ Device.pin_factory = LGPIOFactory()
 
 time.sleep(1)
 
-# Initialize Servo (GPIO pin 12)
+# Initialize Servo (GPIO pin 18)
 servo = AngularServo(
     18,
     min_angle=0,
@@ -84,14 +84,13 @@ ip = get_ip()
 
 # ──────────────── ENVIRO+ SENSORS AND LCD ────────────────
 
-time.sleep(1.0)  # Allow I²C devices to wake
+time.sleep(1.0)  # Give it a sec
 
-# Initialise sensors (same as Pimoroni)
+# Initialise sensors (Same as examples)
 bme280 = BME280()
 ltr559 = LTR559()
 gas_sensor = gas
 
-# Only bring up LCD after sensors are stable
 try:
 
     disp = st7735.ST7735(
@@ -126,11 +125,11 @@ try:
     size_x = x2 - x1
     size_y = y2 - y1
 
-    # Calculate text position
+    # ext position
     x = (WIDTH - size_x) / 2
     y = (HEIGHT / 2) - (size_y / 2)
 
-    # Draw background rectangle and write text.
+    # rite text.
     draw.rectangle((0, 0, 160, 80), back_colour)
     draw.text((x, y), message, font=font, fill=text_colour)
     disp.display(img)
@@ -140,7 +139,6 @@ try:
 except Exception as e:
     print("LCD init failed:", e)
     disp = None
-
 
 # ───── App Setup ─────
 app = Flask(__name__, static_folder="static", static_url_path="")
@@ -232,6 +230,20 @@ xoutRgb = pipeline.create(dai.node.XLinkOut)
 xoutRgb.setStreamName("rgb")
 camRgb.video.link(xoutRgb.input)
 
+def init_depthai():
+    for i in range(10):
+        try:
+            device = dai.Device(pipeline)
+            print("Camera initialized.")
+            return device, device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
+        except RuntimeError as e:
+            print(f"DepthAI init failed (attempt {i+1}): {e}")
+            time.sleep(5)
+    print("Camera failed after retries. Running without camera.")
+    return None, None
+
+device, qRgb = init_depthai()
+
 @app.route("/capture", methods=["POST"])
 def capture_image():
     """Capture a single frame from DepthAI and save it."""
@@ -277,36 +289,52 @@ def delete_image(filename):
     except FileNotFoundError:
         return jsonify({"status": "error", "message": "File not found"}), 404
 
-def init_depthai():
-    for i in range(10):
-        try:
-            device = dai.Device(pipeline)
-            print("Camera initialized.")
-            return device, device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
-        except RuntimeError as e:
-            print(f"DepthAI init failed (attempt {i+1}): {e}")
-            time.sleep(5)
-    print("Camera failed after retries. Running without camera.")
-    return None, None
+# def init_depthai():
+#     for i in range(10):
+#         try:
+#             device = dai.Device(pipeline)
+#             print("Camera initialized.")
+#             return device, device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
+#         except RuntimeError as e:
+#             print(f"DepthAI init failed (attempt {i+1}): {e}")
+#             time.sleep(5)
+#     print("Camera failed after retries. Running without camera.")
+#     return None, None
 
+# ──────────────── TARGET DETECTION INTEGRATION (Oliver) ────────────────
+
+from target_detection.interface import TargetDetectionDummy  # or other subclasses
+
+# Initialize detection system
+target_system = TargetDetectionDummy()
+target_system.start()
 
 def gen_frames():
-    """Generate MJPEG frames from DepthAI."""
-    if qRgb is None:
-        while True:
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + b'' + b'\r\n')
-    else:
-        while True:
-            inRgb = qRgb.get()
-            frame = inRgb.getCvFrame()
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if not ret:
-                continue
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+    """Generate MJPEG frames using the active detection system."""
+    global target_system
+    while True:
+        target_system.wait_for_new_image(timeout=1.0)
+        frame_bytes = target_system.get_image_bytes()
+        if frame_bytes:
+            yield frame_bytes
 
-# ──────────────── LCD CONTROL ROUTES ────────────────
+# def gen_frames():
+#     """Generate MJPEG frames from DepthAI."""
+#     if qRgb is None:
+#         while True:
+#             yield (b'--frame\r\n'
+#                    b'Content-Type: image/jpeg\r\n\r\n' + b'' + b'\r\n')
+#     else:
+#         while True:
+#             inRgb = qRgb.get()
+#             frame = inRgb.getCvFrame()
+#             ret, buffer = cv2.imencode('.jpg', frame)
+#             if not ret:
+#                 continue
+#             yield (b'--frame\r\n'
+#                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+
+# ──────────────── LCD CONTROL ROUTES (Charlie)  ────────────────
 
 from threading import Thread
 
@@ -465,11 +493,44 @@ def serve_static_files(path):
     """Serve static files (JS, CSS, images)."""
     return send_from_directory(app.static_folder, path)
 
+# If needed we can switch later
+# @app.route("/detection/switch/<system>", methods=["POST"])
+# def switch_detection_system(system):
+#     """Switch between different detection subsystems (e.g., Dummy, AruCo, Valve)."""
+#     global active_detection_system
+#
+#     # Stop
+#     if active_detection_system:
+#         active_detection_system.stop()
+#
+#     # system ???
+#     system = system.lower()
+#     if system == "dummy":
+#         active_detection_system = TargetDetectionDummy()
+#     # elif system == "aruco":
+#     #     active_detection_system = TargetDetectionAruCo()
+#     # elif system == "valve":
+#     #     active_detection_system = TargetDetectionValve()
+#     else:
+#         return
+#
+#     active_detection_system.start()
+#     return jsonify({"status": "ok", "message": f"Switched to {system} detection system"})
+
 @app.route("/video_feed")
 def video_feed():
-    """Stream DepthAI feed as MJPEG."""
-    return Response(gen_frames(),
+    """Stream Target feed from target_detection."""
+    return Response(
+        gen_frames(),
         mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# @app.route("/live_feed")
+# def video_feed():
+#     """Stream DepthAI feed as MJPEG."""
+#     return Response(
+#         gen_frames(),
+#         mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 @app.route('/enviro')
 def get_enviro_data():
@@ -567,20 +628,28 @@ def status():
 
 @app.route("/targets")
 def get_targets():
+
     """Expose latest detections as JSON."""
     # return jsonify([d.__dict__ for d in dets])
-    return jsonify({})
+    # ???
+    # detections = target_system.get_detections()
+    detections = target_system.get_gauge_pressure()
 
-# def status():
-#     """Show database status table."""
-#     conn = mysql.connector.connect(**db_config)
-#     cursor = conn.cursor(dictionary=True)
-#     cursor.execute("SELECT * FROM status")
-#     results = cursor.fetchall()
-#     cursor.close()
-#     conn.close()
-#     return render_template_string("<h1>Status Table</h1>" + str(results))
+    dets = [
+        {
+            "type": det.type.value,
+            "confidence": det.confidence,
+            "x": det.x,
+            "y": det.y,
+            "width": det.width,
+            "height": det.height,
+            "angle": det.angle,
+        }
+        for det in detections
+    ]
 
+    return jsonify({"detections": dets})
+    # return jsonify({})
 
 if __name__ == '__main__':
     init_db()
