@@ -32,6 +32,48 @@ class Detection:
                 f"x={self.x}, y={self.y}, w={self.width}, h={self.height}, "
                 f"angle={self.angle})")
 
+# =========================
+# Colors / UI helpers
+# =========================
+_PALETTE = np.array([
+    [56,56,255], [60,179,113], [255,99,71],
+    [238,130,238], [255,215,0], [0,165,255]
+], dtype=np.uint8)
+
+def _color(cid: int):
+    return _PALETTE[cid % len(_PALETTE)].tolist()
+
+LABELS = ['AruCo', 'FireExtinguisher', 'NeedleCenter', 'NeedleTip', 'ValveClosed', 'ValveOpen'] # Has to be synced with DetectionType enum
+def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
+    """
+    dets: list of Detection objects
+    frame: BGR HxWx3 (draws in-place)
+    """
+    H, W = frame.shape[:2]
+    for det in dets:
+        cid = LABELS.index(det.type.value)
+        conf = det.confidence
+        x1 = max(0, min(W-1, int(det.x)))
+        y1 = max(0, min(H-1, int(det.y)))
+        x2 = max(0, min(W-1, int(det.x + det.width)))
+        y2 = max(0, min(H-1, int(det.y + det.height)))
+        if x2 <= x1 or y2 <= y1: 
+            continue
+
+        color = _color(cid)
+        # Box thickness proportional to box perimeter (readable small/large)
+        perim = (x2-x1) + (y2-y1)
+        th = max(2, min(6, perim // 150))
+        cv2.rectangle(frame, (x1,y1), (x2,y2), color, th, cv2.LINE_AA)
+
+        name = det.type.value
+        text = f"{name} {conf:.2f}"
+        (tw, th_text), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+        bx = x1; by = max(0, y1 - th_text - 6)
+        cv2.rectangle(frame, (bx, by), (bx + tw + 6, by + th_text + 6), color, -1)
+        cv2.putText(frame, text, (bx + 3, by + th_text + 1),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+    return frame
 
 class TargetDetectionInterface:
     """
@@ -49,9 +91,20 @@ class TargetDetectionInterface:
         self._thr: Optional[threading.Thread] = None
         self._stop = threading.Event()
 
-    def get_image_bytes(self) -> bytes | None: #cv2.imencode output
+    def _encode_np_bgr_to_mjpeg(self, np_bgr: np.ndarray) -> bytes:
+        (flag, encoded_image) = cv2.imencode(".jpg", np_bgr)
+        if flag:
+            return (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
+			bytearray(encoded_image) + b'\r\n')
+        raise RuntimeError("Failed to encode image")
+
+    def get_image_bytes(self, draw_detections: bool = True) -> bytes | None: #cv2.imencode output
         with self._lock:
-            return self._latest_image
+            if draw_detections and self._latest_detections:
+                frame = self._latest_image
+                frame = draw_detections(frame, self._latest_detections)
+                return self._encode_np_bgr_to_mjpeg(frame)
+            return self._encode_np_bgr_to_mjpeg(self._latest_image)
     
     def get_detections(self) -> list[Detection]:
         with self._lock:
@@ -94,7 +147,7 @@ class TargetDetectionInterface:
     def execute(self) -> tuple[bytes, list[Detection]]:
         raise NotImplementedError("Must be implemented in subclass")
 
-    def _run(self, frequency_hz: float = 60.0, draw_detections: bool = True):
+    def _run(self, frequency_hz: float = 60.0):
         period = 1.0 / frequency_hz
         next_t = time.monotonic()
         while not self._stop.is_set():
@@ -104,7 +157,7 @@ class TargetDetectionInterface:
             next_t = now + period
 
             try:
-                output = self.execute(draw_detections=draw_detections)
+                output = self.execute()
                 if output is None:
                     continue
                 frame, detections = output
@@ -131,13 +184,6 @@ class TargetDetectionDummy(TargetDetectionInterface):
     def __init__(self, cb:Optional[callable]=None):
         super().__init__(cb)
 
-    def _encode_np_bgr_to_mjpeg(self, np_bgr: np.ndarray) -> bytes:
-        (flag, encoded_image) = cv2.imencode(".jpg", np_bgr)
-        if flag:
-            return (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
-			bytearray(encoded_image) + b'\r\n')
-        raise RuntimeError("Failed to encode image")
-
     def make_image(self) -> np.ndarray:
         np_image = np.ones((480, 640, 3), dtype=np.uint8) * 255
         np_hsv_image = cv2.cvtColor(np_image, cv2.COLOR_BGR2HSV)
@@ -158,7 +204,7 @@ class TargetDetectionDummy(TargetDetectionInterface):
         )
         return [mock_detection]
     
-    def execute(self, draw_detections=False) -> tuple[bytes, list[Detection]]:
+    def execute(self) -> tuple[bytes, list[Detection]]:
         image = self.make_image()
         detections = self.make_detections()
         encoded_image = self._encode_np_bgr_to_mjpeg(image)

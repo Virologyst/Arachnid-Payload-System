@@ -14,51 +14,10 @@ from interface import TargetDetectionInterface, Detection, DetectionType
 INPUT_W = 512
 INPUT_H = 384
 NUM_CLASSES = 6
-LABELS = ['AruCo', 'FireExtinguisher', 'NeedleCenter', 'NeedleTip', 'ValveClosed', 'ValveOpen']  # edit to your names
 
 CONF_THRESH = 0.3
 
-# =========================
-# Colors / UI helpers
-# =========================
-_PALETTE = np.array([
-    [56,56,255], [60,179,113], [255,99,71],
-    [238,130,238], [255,215,0], [0,165,255]
-], dtype=np.uint8)
 
-def _color(cid: int):
-    return _PALETTE[cid % len(_PALETTE)].tolist()
-
-def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
-    """
-    dets: list of Detection objects
-    frame: BGR HxWx3 (draws in-place)
-    """
-    H, W = frame.shape[:2]
-    for det in dets:
-        cid = LABELS.index(det.type.value)
-        conf = det.confidence
-        x1 = max(0, min(W-1, int(det.x)))
-        y1 = max(0, min(H-1, int(det.y)))
-        x2 = max(0, min(W-1, int(det.x + det.width)))
-        y2 = max(0, min(H-1, int(det.y + det.height)))
-        if x2 <= x1 or y2 <= y1: 
-            continue
-
-        color = _color(cid)
-        # Box thickness proportional to box perimeter (readable small/large)
-        perim = (x2-x1) + (y2-y1)
-        th = max(2, min(6, perim // 150))
-        cv2.rectangle(frame, (x1,y1), (x2,y2), color, th, cv2.LINE_AA)
-
-        name = det.type.value
-        text = f"{name} {conf:.2f}"
-        (tw, th_text), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-        bx = x1; by = max(0, y1 - th_text - 6)
-        cv2.rectangle(frame, (bx, by), (bx + tw + 6, by + th_text + 6), color, -1)
-        cv2.putText(frame, text, (bx + 3, by + th_text + 1),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
-    return frame
 
 
 
@@ -189,7 +148,7 @@ class TargetDetection(TargetDetectionInterface):
         return filtered
 
 
-    def execute(self, draw_detections=True) -> tuple[bytes, list[Detection]] | None:
+    def execute(self) -> tuple[bytes, list[Detection]] | None:
         fmsg = self.q_frame.tryGet()
         if fmsg is not None:
             seq = fmsg.getSequenceNum()
@@ -213,10 +172,6 @@ class TargetDetection(TargetDetectionInterface):
         frame = fmsg.getCvFrame()
         dets = self._parse_detections(dmsg)
         dets = self._filter_gauges(dets)
-        if draw_detections:
-            frame = draw_detections(frame, dets)
-        
-        frame = self._encode_np_bgr_to_mjpeg(frame)
 
         return frame, dets
     
