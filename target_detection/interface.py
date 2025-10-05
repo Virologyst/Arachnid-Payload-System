@@ -10,11 +10,11 @@ import traceback
 
 class DetectionType(Enum):
     AruCo = "AruCo"
-    ValveOpen = "ValveOpen"
-    ValveClosed = "ValveClosed"
-    NeedleCenter = "NeedleCenter"
-    NeedleTip = "NeedleTip"
-    FireExtinguisher = "FireExtinguisher"
+    ValveOpen = "valve_open"
+    ValveClosed = "valve_closed"
+    NeedleCenter = "needle_center"
+    NeedleTip = "needle_tip"
+    FireExtinguisher = "fire_extinguisher"
 
 
 @dataclass 
@@ -43,7 +43,7 @@ _PALETTE = np.array([
 def _color(cid: int):
     return _PALETTE[cid % len(_PALETTE)].tolist()
 
-LABELS = ['AruCo', 'FireExtinguisher', 'NeedleCenter', 'NeedleTip', 'ValveClosed', 'ValveOpen'] # Has to be synced with DetectionType enum
+LABELS = ['AruCo', 'fire_extinguisher', 'needle_center', 'needle_tip', 'valve_closed', 'valve_open'] # Has to be synced with DetectionType enum
 def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
     """
     dets: list of Detection objects
@@ -87,7 +87,7 @@ class TargetDetectionInterface:
         self._lock = threading.Lock()
         self._new_image_event = threading.Event()
         self._latest_detections: list[Detection] = []
-        self._latest_image: Optional[bytes] = None
+        self._latest_image: Optional[np.ndarray] = None
         self._thr: Optional[threading.Thread] = None
         self._stop = threading.Event()
 
@@ -98,13 +98,17 @@ class TargetDetectionInterface:
 			bytearray(encoded_image) + b'\r\n')
         raise RuntimeError("Failed to encode image")
 
-    def get_image_bytes(self, draw_detections: bool = True) -> bytes | None: #cv2.imencode output
+    def get_image_bytes(self, draw_detections_flag: bool = True, encode=True) -> bytes | None: #cv2.imencode output
         with self._lock:
-            if draw_detections and self._latest_detections:
+            if draw_detections_flag and self._latest_detections:
                 frame = self._latest_image
                 frame = draw_detections(frame, self._latest_detections)
-                return self._encode_np_bgr_to_mjpeg(frame)
-            return self._encode_np_bgr_to_mjpeg(self._latest_image)
+                if encode:
+                    return self._encode_np_bgr_to_mjpeg(frame)
+                return frame
+            if encode:
+                return self._encode_np_bgr_to_mjpeg(self._latest_image)
+            return self._latest_image
     
     def get_detections(self) -> list[Detection]:
         with self._lock:
@@ -114,6 +118,8 @@ class TargetDetectionInterface:
         pressure_map_slope = (5-2)/(90-0)
         pressure_map_intercept = -1
         with self._lock:
+            if self._latest_detections is None:
+                return None
             for det in self._latest_detections:
                 if det.type == DetectionType.NeedleCenter:
                     angle = det.angle
@@ -207,8 +213,7 @@ class TargetDetectionDummy(TargetDetectionInterface):
     def execute(self) -> tuple[bytes, list[Detection]]:
         image = self.make_image()
         detections = self.make_detections()
-        encoded_image = self._encode_np_bgr_to_mjpeg(image)
-        return encoded_image, detections
+        return image, detections
 
     
 if __name__ == "__main__":
