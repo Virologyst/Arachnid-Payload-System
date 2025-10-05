@@ -313,16 +313,50 @@ from threading import Thread
 lcd_loop_active = False
 current_mode = "ip"
 
-def lcd_show_message(text, color=(0, 170, 170)):
-    """Helper to draw a centered message on the LCD."""
-    global disp, draw, img, font
-    draw.rectangle((0, 0, WIDTH, HEIGHT), color)
-    x1, y1, x2, y2 = font.getbbox(text)
-    size_x = x2 - x1
-    size_y = y2 - y1
-    x = (WIDTH - size_x) / 2
-    y = (HEIGHT / 2) - (size_y / 2)
-    draw.text((x, y), text, font=font, fill=(255, 255, 255))
+# def lcd_show_message(text, color=(0, 170, 170)):
+#     """Helper to draw a centered message on the LCD."""
+#     global disp, draw, img, font
+#     draw.rectangle((0, 0, WIDTH, HEIGHT), color)
+#     x1, y1, x2, y2 = font.getbbox(text)
+#     size_x = x2 - x1
+#     size_y = y2 - y1
+#     x = (WIDTH - size_x) / 2
+#     y = (HEIGHT / 2) - (size_y / 2)
+#     draw.text((x, y), text, font=font, fill=(255, 255, 255))
+#     disp.display(img)
+
+def lcd_show_message(title, value=None):
+    """Render text on the LCD with title + value formatting (stacked lines)."""
+    global disp, draw, font
+
+    WIDTH, HEIGHT = disp.width, disp.height
+    img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    # Fonts
+    title_font = ImageFont.truetype(UserFont, 16)
+    value_font = ImageFont.truetype(UserFont, 22)
+
+    # Colors
+    text_colour = (255, 255, 255)
+    back_colour = (0, 100, 180)
+
+    # Draw background
+    draw.rectangle((0, 0, WIDTH, HEIGHT), back_colour)
+
+    # If no value provided, just display one centered line
+    if not value:
+        tw, th = title_font.getbbox(title)[2:]
+        draw.text(((WIDTH - tw) / 2, (HEIGHT - th) / 2), title, font=title_font, fill=text_colour)
+    else:
+        # Draw title (top line)
+        tw, th = title_font.getbbox(title)[2:]
+        draw.text(((WIDTH - tw) / 2, 10), title, font=title_font, fill=text_colour)
+
+        # Draw value (bottom line)
+        vw, vh = value_font.getbbox(value)[2:]
+        draw.text(((WIDTH - vw) / 2, (HEIGHT / 2)), value, font=value_font, fill=text_colour)
+
     disp.display(img)
 
 @app.route("/lcd/on", methods=["POST"])
@@ -384,12 +418,28 @@ def lcd_loop_thread():
     """Cycle through sensor values automatically."""
     global lcd_loop_active
     modes = ["temperature", "humidity", "pressure"]
+    delay = 5  # seconds per mode
+
     while lcd_loop_active:
         for mode in modes:
             if not lcd_loop_active:
-                break
-            lcd_show(mode)
-            time.sleep(1)
+                return  # gracefully exit loop if toggled off
+
+            try:
+                if mode == "temperature":
+                    val = f"TEMP: {bme280.get_temperature():.1f}C"
+                elif mode == "humidity":
+                    val = f"HUM: {bme280.get_humidity():.1f}%"
+                elif mode == "pressure":
+                    val = f"PRES: {bme280.get_pressure():.1f}hPa"
+                else:
+                    val = mode.upper()
+
+                lcd_show_message(val)
+            except Exception as e:
+                print(f"[LCD LOOP ERROR] {e}")
+
+            time.sleep(delay)
 
 # ──────────────── ROUTES ────────────────
 

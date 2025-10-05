@@ -264,7 +264,7 @@
                                 Update & Restart
                             </button>
 
-                            <h3>LCD Controls</h3>
+                            <h2>LCD Controls</h2>
                             <div class="lcd-controls">
                                 <button class="update-btn" on:click={() => fetch('/lcd/on', {method: 'POST'})}>Turn on LCD</button>
                                 <button class="update-btn" on:click={() => fetch('/lcd/off', {method: 'POST'})}>Turn off LCD</button>
