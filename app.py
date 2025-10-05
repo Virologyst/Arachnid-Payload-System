@@ -649,6 +649,8 @@ def get_targets():
     detections = target_system.get_detections()
     print("Targets:", detections)
 
+    data = get_guage_pressure
+
     dets = [
         {
             "type": det.type.value,
