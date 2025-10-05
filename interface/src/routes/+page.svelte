@@ -184,7 +184,8 @@
         <div class="top-row">
 
             <div class="camera-pane">
-                <img src="/video_feed" alt="Live Feed">
+                <img src="/live_feed" alt="Live Feed">
+                <img src="/video_feed" alt="Target Feed">
                 <div class="sensor-overlay">
                     🌡 {enviro.temperature}°C | 💧 {enviro.humidity}% | 📈 {enviro.pressure}hPa
                 </div>
