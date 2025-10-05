@@ -94,7 +94,7 @@ class TargetDetectionInterface:
     def execute(self) -> tuple[bytes, list[Detection]]:
         raise NotImplementedError("Must be implemented in subclass")
 
-    def _run(self, frequency_hz: float = 60.0):
+    def _run(self, frequency_hz: float = 60.0, draw_detections: bool = True):
         period = 1.0 / frequency_hz
         next_t = time.monotonic()
         while not self._stop.is_set():
@@ -104,7 +104,7 @@ class TargetDetectionInterface:
             next_t = now + period
 
             try:
-                output = self.execute()
+                output = self.execute(draw_detections=draw_detections)
                 if output is None:
                     continue
                 frame, detections = output
@@ -158,7 +158,7 @@ class TargetDetectionDummy(TargetDetectionInterface):
         )
         return [mock_detection]
     
-    def execute(self) -> tuple[bytes, list[Detection]]:
+    def execute(self, draw_detections=False) -> tuple[bytes, list[Detection]]:
         image = self.make_image()
         detections = self.make_detections()
         encoded_image = self._encode_np_bgr_to_mjpeg(image)

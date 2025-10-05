@@ -164,16 +164,32 @@ class TargetDetection(TargetDetectionInterface):
                                         highest_conf_needle_center.y + highest_conf_needle_center.height / 2)
             center_of_needle_tip = (highest_conf_needle_tip.x + highest_conf_needle_tip.width / 2,
                                     highest_conf_needle_tip.y + highest_conf_needle_tip.height / 2)
-            angle = math.degrees(math.atan2(center_of_needle_tip[1] - center_of_needle_center[1],
-                                              center_of_needle_tip[0] - center_of_needle_center[0]))
-            highest_conf_needle_tip.angle = angle
-            highest_conf_needle_center.angle = angle
+            
+            dy = center_of_needle_tip[1] - center_of_needle_center[1]
+            dx = center_of_needle_tip[0] - center_of_needle_center[0]
+            theta = math.atan2(dy, dx)
+            theta = math.degrees(theta)
+            theta = round(theta)
+            if theta < 0:
+                theta *= -1
+                theta = (180 - theta) + 180
+
+            # Sets new starting point
+            theta = theta - 90
+
+            # Changes negative theta to appropriate value
+            if theta < 0:
+                theta *= -1
+                theta = theta + 270
+
+            highest_conf_needle_tip.angle = theta
+            highest_conf_needle_center.angle = theta
             filtered.append(highest_conf_needle_center)
             filtered.append(highest_conf_needle_tip)
         return filtered
 
 
-    def execute(self) -> tuple[bytes, list[Detection]] | None:
+    def execute(self, draw_detections=True) -> tuple[bytes, list[Detection]] | None:
         fmsg = self.q_frame.tryGet()
         if fmsg is not None:
             seq = fmsg.getSequenceNum()
@@ -197,7 +213,9 @@ class TargetDetection(TargetDetectionInterface):
         frame = fmsg.getCvFrame()
         dets = self._parse_detections(dmsg)
         dets = self._filter_gauges(dets)
-        frame = draw_detections(frame, dets)
+        if draw_detections:
+            frame = draw_detections(frame, dets)
+        
         frame = self._encode_np_bgr_to_mjpeg(frame)
 
         return frame, dets
