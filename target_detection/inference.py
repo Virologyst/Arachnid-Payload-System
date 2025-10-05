@@ -74,10 +74,10 @@ class TargetDetection(TargetDetectionInterface):
             rect = det.rotated_rect
             # convert to xywh
             minx, miny, maxx, maxy = rect.getOuterRect()
-            x1 = minx
-            y1 = miny
-            x2 = maxx
-            y2 = maxy
+            x1 = int(minx*INPUT_W)
+            y1 = int(miny*INPUT_H)
+            x2 = int(maxx*INPUT_W)
+            y2 = int(maxy*INPUT_H)
             w = x2 - x1
             h = y2 - y1
             cls = det.label
@@ -89,6 +89,7 @@ class TargetDetection(TargetDetectionInterface):
                 angle=None
             )
             dets.append(detection)
+        return dets
         
     def _filter_gauges(self, dets: list[Detection] | None) -> list[Detection] | None:
         highest_conf_needle_center = None
