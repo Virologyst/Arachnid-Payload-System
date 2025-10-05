@@ -264,12 +264,12 @@
                                 Update & Restart
                             </button>
 
-                            <h3>LCD Controls</h3>
+                            <h2>LCD Controls</h2>
                             <div class="lcd-controls">
-                                <button on:click={() => fetch('/lcd/on', {method: 'POST'})}>💡 LCD On</button>
-                                <button on:click={() => fetch('/lcd/off', {method: 'POST'})}>🌑 LCD Off</button>
-                                <button on:click={() => fetch('/lcd/show/ip', {method: 'POST'})}>📡 Show IP</button>
-                                <button on:click={() => fetch('/lcd/loop', {method: 'POST'})}>🔁 Loop Sensors</button>
+                                <button class="update-btn" on:click={() => fetch('/lcd/on', {method: 'POST'})}>Turn on LCD</button>
+                                <button class="update-btn" on:click={() => fetch('/lcd/off', {method: 'POST'})}>Turn off LCD</button>
+                                <button class="update-btn" on:click={() => fetch('/lcd/show/ip', {method: 'POST'})}>Show IP Address</button>
+                                <button class="update-btn" on:click={() => fetch('/lcd/loop', {method: 'POST'})}>Show Sensor Data</button>
                             </div>
 
                             {#if loading}
