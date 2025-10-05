@@ -264,6 +264,14 @@
                                 Update & Restart
                             </button>
 
+                            <h3>LCD Controls</h3>
+                            <div class="lcd-controls">
+                                <button on:click={() => fetch('/lcd/on', {method: 'POST'})}>💡 LCD On</button>
+                                <button on:click={() => fetch('/lcd/off', {method: 'POST'})}>🌑 LCD Off</button>
+                                <button on:click={() => fetch('/lcd/show/ip', {method: 'POST'})}>📡 Show IP</button>
+                                <button on:click={() => fetch('/lcd/loop', {method: 'POST'})}>🔁 Loop Sensors</button>
+                            </div>
+
                             {#if loading}
                                 <div id="loading">
                                     <img src="loading.gif" alt="Loading..." style="width: 50px;">
