@@ -42,6 +42,10 @@ Device.pin_factory = LGPIOFactory()
 # import curses
 # from time import sleep
 
+# ──────────────── Drilling Mechanism (Nicky)────────────────
+
+# detections = target_system.get_gauge_pressure()
+# Note to Nicky - pressure plate detection target_system.get_gauge_pressure() - Lower limit 2 Bar. Needs low pass filter
 # Initialise Servo
 # servo = AngularServo(12, min_angle=0, max_angle=360, min_pulse_width=0.0005, max_pulse_width=0.0025)
 
@@ -214,45 +218,86 @@ def init_db():
     conn.commit()
     conn.close()
 
+# ──────────────── TARGET DETECTION INTEGRATION (Oliver) ────────────────
+
+from target_detection.interface import TargetDetectionDummy
+from target_detection.inference import TargetDetection
+
+# Initialize detection system
+target_system = TargetDetection()
+
+print("Initialized target system", flush=True)
+
+target_system.start()
+
+def gen_frames():
+    """Generate MJPEG frames using the active detection system."""
+    global target_system
+    while True:
+        target_system.wait_for_new_image(timeout=1.0)
+        frame_bytes = target_system.get_image_bytes()
+        if frame_bytes:
+
+            yield frame_bytes
+
+# def gen_frames():
+#     """Generate MJPEG frames from DepthAI."""
+#     if qRgb is None:
+#         while True:
+#             yield (b'--frame\r\n'
+#                    b'Content-Type: image/jpeg\r\n\r\n' + b'' + b'\r\n')
+#     else:
+#         while True:
+#             inRgb = qRgb.get()
+#             frame = inRgb.getCvFrame()
+#             ret, buffer = cv2.imencode('.jpg', frame)
+#             if not ret:
+#                 continue
+#             yield (b'--frame\r\n'
+#                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+
 # ──────────────── DEPTHAI CAMERA ────────────────
 
 if not os.path.exists(IMAGE_DIR):
     os.makedirs(IMAGE_DIR)
 
-pipeline = dai.Pipeline()
+# pipeline = dai.Pipeline()
+#
+# camRgb = pipeline.create(dai.node.ColorCamera)
+# camRgb.setBoardSocket(dai.CameraBoardSocket.CAM_A)
+# camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
+# camRgb.setInterleaved(False)
+#
+# xoutRgb = pipeline.create(dai.node.XLinkOut)
+# xoutRgb.setStreamName("rgb")
+# camRgb.video.link(xoutRgb.input)
 
-camRgb = pipeline.create(dai.node.ColorCamera)
-camRgb.setBoardSocket(dai.CameraBoardSocket.CAM_A)
-camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-camRgb.setInterleaved(False)
-
-xoutRgb = pipeline.create(dai.node.XLinkOut)
-xoutRgb.setStreamName("rgb")
-camRgb.video.link(xoutRgb.input)
-
-def init_depthai():
-    for i in range(10):
-        try:
-            device = dai.Device(pipeline)
-            print("Camera initialized.")
-            return device, device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
-        except RuntimeError as e:
-            print(f"DepthAI init failed (attempt {i+1}): {e}")
-            time.sleep(5)
-    print("Camera failed after retries. Running without camera.")
-    return None, None
-
-device, qRgb = init_depthai()
+# def init_depthai():
+#     for i in range(10):
+#         try:
+#             device = dai.Device(pipeline)
+#             print("Camera initialized.")
+#             return device, device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
+#         except RuntimeError as e:
+#             print(f"DepthAI init failed (attempt {i+1}): {e}")
+#             time.sleep(5)
+#     print("Camera failed after retries. Running without camera.")
+#     return None, None
+#
+# device, qRgb = init_depthai()
 
 @app.route("/capture", methods=["POST"])
 def capture_image():
     """Capture a single frame from DepthAI and save it."""
     try:
-        if qRgb is None:
-            return jsonify({"status": "error", "message": "Camera not initialized"}), 500
 
-        inRgb = qRgb.get()
-        frame = inRgb.getCvFrame()
+        # if qRgb is None:
+        #     return jsonify({"status": "error", "message": "Camera not initialized"}), 500
+        #
+        # inRgb = qRgb.get()
+        # frame = inRgb.getCvFrame()
+
+        frame = target_system.get_image_bytes(encode=False)
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{IMAGE_DIR}/capture_{timestamp}.jpg"
@@ -301,38 +346,7 @@ def delete_image(filename):
 #     print("Camera failed after retries. Running without camera.")
 #     return None, None
 
-# ──────────────── TARGET DETECTION INTEGRATION (Oliver) ────────────────
 
-from target_detection.interface import TargetDetectionDummy  # or other subclasses
-
-# Initialize detection system
-target_system = TargetDetectionDummy()
-target_system.start()
-
-def gen_frames():
-    """Generate MJPEG frames using the active detection system."""
-    global target_system
-    while True:
-        target_system.wait_for_new_image(timeout=1.0)
-        frame_bytes = target_system.get_image_bytes()
-        if frame_bytes:
-            yield frame_bytes
-
-# def gen_frames():
-#     """Generate MJPEG frames from DepthAI."""
-#     if qRgb is None:
-#         while True:
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + b'' + b'\r\n')
-#     else:
-#         while True:
-#             inRgb = qRgb.get()
-#             frame = inRgb.getCvFrame()
-#             ret, buffer = cv2.imencode('.jpg', frame)
-#             if not ret:
-#                 continue
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
 # ──────────────── LCD CONTROL ROUTES (Charlie)  ────────────────
 
@@ -632,8 +646,8 @@ def get_targets():
     """Expose latest detections as JSON."""
     # return jsonify([d.__dict__ for d in dets])
     # ???
-    # detections = target_system.get_detections()
-    detections = target_system.get_gauge_pressure()
+    detections = target_system.get_detections()
+    print("Targets:", detections)
 
     dets = [
         {

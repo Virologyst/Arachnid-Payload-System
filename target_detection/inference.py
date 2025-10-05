@@ -6,7 +6,7 @@ import numpy as np
 import cv2, time, math
 from collections import deque
 
-from interface import TargetDetectionInterface, Detection, DetectionType
+from .interface import TargetDetectionInterface, Detection, DetectionType
 
 # =========================
 # Config
@@ -17,52 +17,37 @@ NUM_CLASSES = 6
 
 CONF_THRESH = 0.3
 
-
-
-
-
 class TargetDetection(TargetDetectionInterface):
-    def __init__(self, cb:Optional[Callable]=None, frames_by_seq: dict[int, dai.ImgFrame] = {}, 
-                 nn_by_seq: dict[int, dai.NNData] = {}, MAX_BUF = 16):
+
+    def __init__(self, cb: Optional[Callable] = None, frames_by_seq: dict[int, dai.ImgFrame] = {},
+                 nn_by_seq: dict[int, dai.NNData] = {}, MAX_BUF=16):
         super().__init__(cb)
         superblob_path = Path(__file__).parent / "model.rvc2.tar.xz"
         assert superblob_path.exists(), f"Superblob path {superblob_path} does not exist!"
 
-        device = dai.Device()
-        platform = device.getPlatform()
-        img_frame_type = dai.ImgFrame.Type.BGR888p if platform.name != "RVC4" else dai.ImgFrame.Type.BGR888i
-        
-        pipeline = dai.Pipeline()
-        cam = pipeline.create(dai.node.Camera).build()
-        cam_out = cam.requestOutput((INPUT_H, INPUT_W), type=img_frame_type, fps=30)
+        self.pipeline = dai.Pipeline().__enter__()
+        cam = self.pipeline.create(dai.node.Camera).build()
+        cam_out = cam.requestOutput((INPUT_W, INPUT_H), type=dai.ImgFrame.Type.BGR888p, fps=30)
         nn_archive = dai.NNArchive(str(superblob_path))
-        nn_with_parser = pipeline.create(ParsingNeuralNetwork).build(
+        nn_with_parser = self.pipeline.create(ParsingNeuralNetwork).build(
             cam_out,
             nn_archive
         )
 
         self.label_encoding = {k: v for k, v in enumerate(nn_archive.getConfig().model.heads[0].metadata.classes)}
-        bridge = pipeline.create(ImgDetectionsBridge).build(nn_with_parser.out)
+        bridge = self.pipeline.create(ImgDetectionsBridge).build(nn_with_parser.out)
         bridge.setLabelEncoding(self.label_encoding)
 
-        xout_frame = pipeline.create(dai.node.XLinkOut)
-        xout_frame.setStreamName("frames")
-        cam_out.link(xout_frame.input)
-
-        xout_det = pipeline.create(dai.node.XLinkOut)
-        xout_det.setStreamName("detections")
-        bridge.out.link(xout_det.input)
-
-        self.q_frame = device.getOutputQueue(name="frames", maxSize=4, blocking=False)
-        self.q_det = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
+        self.q_frame = cam_out.createOutputQueue()
+        self.q_det = bridge.out.createOutputQueue()
 
         self.frames = {}
         self.detections = {}
         self.order = deque()
         self.buffer_size = 60
 
-        pipeline.start()
-        while not pipeline.isRunning():
+        self.pipeline.start()
+        while not self.pipeline.isRunning():
             time.sleep(0.01)
 
     def _pop_synced(self):
@@ -81,31 +66,60 @@ class TargetDetection(TargetDetectionInterface):
 			bytearray(encoded_image) + b'\r\n')
         raise RuntimeError("Failed to encode image")
     
+    # def _parse_detections(self, dmsg: dai.NNData) -> list[Detection]:
+    #     #     dets: list[Detection] = []
+    #     #     for det in dmsg.detections:
+    #     #         score = getattr(det, 'confidence', None)
+    #     #         if score is None or score < CONF_THRESH:
+    #     #             continue
+    #     #         x1 = int(det.xmin * INPUT_W)
+    #     #         y1 = int(det.ymin * INPUT_H)
+    #     #         x2 = int(det.xmax * INPUT_W)
+    #     #         y2 = int(det.ymax * INPUT_H)
+    #     #         w = x2 - x1
+    #     #         h = y2 - y1
+    #     #         cls = det.label
+    #     #         name = self.label_encoding.get(cls, str(cls))
+    #     #         detection = Detection(
+    #     #             confidence=score if score is not None else 0.0,
+    #     #             x = x1, y = y1, width = w, height = h,
+    #     #             type = DetectionType(name),
+    #     #             angle = None
+    #     #         )
+    #     #         dets.append(detection)
+
     def _parse_detections(self, dmsg: dai.NNData) -> list[Detection]:
         dets: list[Detection] = []
         for det in dmsg.detections:
-            score = getattr(det, 'confidence', None)
-            if score is None or score < CONF_THRESH:
+            score = det.confidence
+            if score < CONF_THRESH:
                 continue
-            x1 = int(det.xmin * INPUT_W)
-            y1 = int(det.ymin * INPUT_H)
-            x2 = int(det.xmax * INPUT_W)
-            y2 = int(det.ymax * INPUT_H)
+            rect = det.rotated_rect
+            # convert to xywh
+            minx, miny, maxx, maxy = rect.getOuterRect()
+            x1 = minx
+            y1 = miny
+            x2 = maxx
+            y2 = maxy
             w = x2 - x1
             h = y2 - y1
             cls = det.label
             name = self.label_encoding.get(cls, str(cls))
             detection = Detection(
                 confidence=score if score is not None else 0.0,
-                x = x1, y = y1, width = w, height = h,
-                type = DetectionType(name),
-                angle = None
+                x=x1, y=y1, width=w, height=h,
+                type=DetectionType(name),
+                angle=None
             )
             dets.append(detection)
-        
-    def _filter_gauges(self, dets: list[Detection]) -> list[Detection]:
+
+    def _filter_gauges(self, dets: list[Detection] | None) -> list[Detection] | None:
         highest_conf_needle_center = None
         highest_conf_needle_tip = None
+        if dets is None:
+            return None
+
+
         for det in dets:
             if det.type == DetectionType.NeedleCenter:
                 if (highest_conf_needle_center is None or 
@@ -148,6 +162,33 @@ class TargetDetection(TargetDetectionInterface):
         return filtered
 
 
+    # def execute(self) -> tuple[bytes, list[Detection]] | None:
+    #     fmsg = self.q_frame.tryGet()
+    #     if fmsg is not None:
+    #         seq = fmsg.getSequenceNum()
+    #         self.frames[seq] = fmsg
+    #         self.order.append(seq)
+    #
+    #     dmsg = self.q_det.tryGet()
+    #     if dmsg is not None:
+    #         seq = dmsg.getSequenceNum()
+    #         self.detections[seq] = dmsg
+    #         self.order.append(seq)
+    #
+    #     seq, fmsg, dmsg = self._pop_synced()
+    #     if fmsg is None:
+    #         while len(self.order) > self.buffer_size:
+    #             old_seq = self.order.popleft()
+    #             self.frames.pop(old_seq, None)
+    #             self.detections.pop(old_seq, None)
+    #         time.sleep(0.01)
+    #
+    #     frame = fmsg.getCvFrame()
+    #     dets = self._parse_detections(dmsg)
+    #     dets = self._filter_gauges(dets)
+    #
+    #     return frame, dets
+
     def execute(self) -> tuple[bytes, list[Detection]] | None:
         fmsg = self.q_frame.tryGet()
         if fmsg is not None:
@@ -168,12 +209,14 @@ class TargetDetection(TargetDetectionInterface):
                 self.frames.pop(old_seq, None)
                 self.detections.pop(old_seq, None)
             time.sleep(0.01)
-        
-        frame = fmsg.getCvFrame()
-        dets = self._parse_detections(dmsg)
-        dets = self._filter_gauges(dets)
+        else:
+            frame = fmsg.getCvFrame()
+            dets = self._parse_detections(dmsg)
+            dets = self._filter_gauges(dets)
+            return frame, dets
 
-        return frame, dets
+        return None
+
     
 if __name__ == "__main__":
     def on_new_image():
@@ -193,4 +236,4 @@ if __name__ == "__main__":
     finally:
         dummy.stop()
 
-cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
