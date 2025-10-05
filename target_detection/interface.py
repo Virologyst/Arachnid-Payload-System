@@ -56,6 +56,17 @@ class TargetDetectionInterface:
     def get_detections(self) -> list[Detection]:
         with self._lock:
             return self._latest_detections
+        
+    def get_gauge_pressure(self) -> Optional[float]:
+        pressure_map_slope = (5-2)/(90-0)
+        pressure_map_intercept = -1
+        with self._lock:
+            for det in self._latest_detections:
+                if det.type == DetectionType.NeedleCenter:
+                    angle = det.angle
+                    pressure = pressure_map_slope * angle + pressure_map_intercept
+                    return pressure #approximate BAR pressure
+        return None
 
     def set_new_image_cb(self, cb: Optional[callable]):
         self.new_image_cb = cb
@@ -137,7 +148,7 @@ class TargetDetectionDummy(TargetDetectionInterface):
 
     def make_detections(self) -> list[Detection]:
         mock_detection = Detection(
-            type=DetectionType.Gauge,
+            type=DetectionType.AruCo,
             confidence=0.95,
             x=100,
             y=150,
@@ -161,9 +172,10 @@ if __name__ == "__main__":
     dummy = TargetDetectionDummy(cb=on_new_image)
     dummy.start()
     try:
-        for _ in range(3):
+        for _ in range(300000):
             if dummy.wait_for_new_image(timeout=2.0):
                 print("waiter saw a frame; dets:", dummy.get_detections())
+                
             else:
                 print("timeout waiting for frame")
     finally:
