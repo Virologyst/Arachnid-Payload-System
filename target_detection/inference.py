@@ -196,6 +196,8 @@ class TargetDetection(TargetDetectionInterface):
         
         frame = fmsg.getCvFrame()
         dets = self._parse_detections(dmsg)
+        dets = self._filter_gauges(dets)
+        frame = draw_detections(frame, dets)
 
         return frame, dets
     
