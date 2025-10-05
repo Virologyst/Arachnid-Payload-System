@@ -6,7 +6,7 @@ import numpy as np
 import cv2, time, math
 from collections import deque
 
-from interface import TargetDetectionInterface, Detection, DetectionType
+from .interface import TargetDetectionInterface, Detection, DetectionType
 
 # =========================
 # Config
@@ -17,17 +17,13 @@ NUM_CLASSES = 6
 
 CONF_THRESH = 0.3
 
-
-
-
-
 class TargetDetection(TargetDetectionInterface):
-    def __init__(self, cb:Optional[Callable]=None, frames_by_seq: dict[int, dai.ImgFrame] = {}, 
-                 nn_by_seq: dict[int, dai.NNData] = {}, MAX_BUF = 16):
+
+    def __init__(self, cb: Optional[Callable] = None, frames_by_seq: dict[int, dai.ImgFrame] = {},
+                 nn_by_seq: dict[int, dai.NNData] = {}, MAX_BUF=16):
         super().__init__(cb)
         superblob_path = Path(__file__).parent / "model.rvc2.tar.xz"
         assert superblob_path.exists(), f"Superblob path {superblob_path} does not exist!"
-        
         self.pipeline = dai.Pipeline().__enter__()
         cam = self.pipeline.create(dai.node.Camera).build()
         cam_out = cam.requestOutput((INPUT_W, INPUT_H), type=dai.ImgFrame.Type.BGR888p, fps=30)
@@ -68,7 +64,7 @@ class TargetDetection(TargetDetectionInterface):
             return (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
 			bytearray(encoded_image) + b'\r\n')
         raise RuntimeError("Failed to encode image")
-    
+
     def _parse_detections(self, dmsg: dai.NNData) -> list[Detection]:
         dets: list[Detection] = []
         for det in dmsg.detections:
@@ -88,9 +84,9 @@ class TargetDetection(TargetDetectionInterface):
             name = self.label_encoding.get(cls, str(cls))
             detection = Detection(
                 confidence=score if score is not None else 0.0,
-                x = x1, y = y1, width = w, height = h,
-                type = DetectionType(name),
-                angle = None
+                x=x1, y=y1, width=w, height=h,
+                type=DetectionType(name),
+                angle=None
             )
             dets.append(detection)
         
@@ -140,7 +136,6 @@ class TargetDetection(TargetDetectionInterface):
             filtered.append(highest_conf_needle_center)
             filtered.append(highest_conf_needle_tip)
         return filtered
-
 
     def execute(self) -> tuple[bytes, list[Detection]] | None:
         fmsg = self.q_frame.tryGet()

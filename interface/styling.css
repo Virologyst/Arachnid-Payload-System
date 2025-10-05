@@ -155,6 +155,7 @@ main {
 /* === CAMERA PANE === */
 
 .camera-pane {
+    max-height: 1200px;
     flex: 2;
     background: #000;
     display: flex;
@@ -518,7 +519,7 @@ main {
 @media (max-width: 768px) {
 
     .capture-btn .drill-btn {
-        width: 180px;
+        width: 150px;
     }
 
     .sensor-overlay {

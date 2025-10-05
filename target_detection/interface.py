@@ -98,7 +98,7 @@ class TargetDetectionInterface:
 			bytearray(encoded_image) + b'\r\n')
         raise RuntimeError("Failed to encode image")
 
-    def get_image_bytes(self, draw_detections_flag: bool = True, encode=True) -> bytes | None: #cv2.imencode output
+    def get_image_bytes(self, draw_detections_flag: bool = True, encode=True) -> bytes | None:  # cv2.imencode output
         with self._lock:
             if draw_detections_flag and self._latest_detections:
                 frame = self._latest_image
@@ -113,9 +113,9 @@ class TargetDetectionInterface:
     def get_detections(self) -> list[Detection]:
         with self._lock:
             return self._latest_detections
-        
+
     def get_gauge_pressure(self) -> Optional[float]:
-        pressure_map_slope = (5-2)/(90-0)
+        pressure_map_slope = (5 - 2) / (90 - 0)
         pressure_map_intercept = -1
         with self._lock:
             if self._latest_detections is None:
@@ -124,7 +124,7 @@ class TargetDetectionInterface:
                 if det.type == DetectionType.NeedleCenter:
                     angle = det.angle
                     pressure = pressure_map_slope * angle + pressure_map_intercept
-                    return pressure #approximate BAR pressure
+                    return pressure  # approximate BAR pressure
         return None
 
     def set_new_image_cb(self, cb: Optional[callable]):
