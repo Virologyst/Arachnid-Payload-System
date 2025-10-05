@@ -6,11 +6,13 @@ from collections import deque
 import logging
 import subprocess
 import random
+import socket
+import smbus2
 
 # ───── Third-Party ─────
 import cv2
 import depthai as dai
-import smbus2
+
 import sqlite3
 from flask import (
     Flask, Response, jsonify,
@@ -19,41 +21,35 @@ from flask import (
 )
 
 # --- Enviro+ sensors ---
+from smbus2 import SMBus
 from enviroplus import gas
 from bme280 import BME280
 from ltr559 import LTR559
 
-# --- Enviro LCD (Charlie) ---
-
-import socket
+# --- Enviro LCD  ---
+from fonts.ttf import RobotoMedium as UserFont
 from PIL import Image, ImageDraw, ImageFont
-from ST7735 import ST7735
-
-# Init display
-disp = ST7735(port=0, cs=0, dc=9, backlight=12, rotation=90)
-disp.begin()
-
-# Get IP
-ip = socket.gethostbyname(socket.gethostname())
-
-# Draw IP
-img = Image.new("RGB", (160, 80))
-draw = ImageDraw.Draw(img)
-draw.text((5, 30), f"IP: {ip}", fill=(255, 255, 255))
-disp.display(img)
+import st7735
 
 # --- Drill service (Nicky) ---
 # Import Libraries needed to run code
 from gpiozero import AngularServo
+from gpiozero import Device
+from gpiozero.pins.lgpio import LGPIOFactory
+
+Device.pin_factory = LGPIOFactory()
+
 # import curses
 # from time import sleep
 
 # Initialise Servo
 # servo = AngularServo(12, min_angle=0, max_angle=360, min_pulse_width=0.0005, max_pulse_width=0.0025)
 
+time.sleep(1)
+
 # Initialize Servo (GPIO pin 12)
 servo = AngularServo(
-    12,
+    18,
     min_angle=0,
     max_angle=360,
     min_pulse_width=0.0005,
@@ -69,9 +65,85 @@ def Drill():
     servo.angle = 90
     print("Drill sequence completed.")
 
+
+# ──────────────── Get IP ────────────────
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0)
+    try:
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = "No IP"
+    finally:
+        s.close()
+    return ip
+
+ip = get_ip()
+# print("Detected IP:", ip)
+
+# ──────────────── ENVIRO+ SENSORS AND LCD ────────────────
+
+time.sleep(1.0)  # Allow I²C devices to wake
+
+# Initialise sensors (same as Pimoroni)
+bme280 = BME280()
+ltr559 = LTR559()
+gas_sensor = gas
+
+# Only bring up LCD after sensors are stable
+try:
+
+    disp = st7735.ST7735(
+        port=0,
+        cs=1,
+        dc="GPIO9",
+        backlight="GPIO12",
+        rotation=270,
+        spi_speed_hz=10000000
+    )
+
+    # Initialize display.
+    disp.begin()
+
+    # Width and height to calculate text position.
+    WIDTH = disp.width
+    HEIGHT = disp.height
+
+    # New canvas to draw on.
+    img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    # Text settings.
+    font_size = 20
+    font = ImageFont.truetype(UserFont, font_size)
+    text_colour = (255, 255, 255)
+    back_colour = (0, 170, 170)
+
+    message = ip
+
+    x1, y1, x2, y2 = font.getbbox(message)
+    size_x = x2 - x1
+    size_y = y2 - y1
+
+    # Calculate text position
+    x = (WIDTH - size_x) / 2
+    y = (HEIGHT / 2) - (size_y / 2)
+
+    # Draw background rectangle and write text.
+    draw.rectangle((0, 0, 160, 80), back_colour)
+    draw.text((x, y), message, font=font, fill=text_colour)
+    disp.display(img)
+
+    print("Enviro+ and LCD initialised correctly.")
+
+except Exception as e:
+    print("LCD init failed:", e)
+    disp = None
+
+
 # ───── App Setup ─────
 app = Flask(__name__, static_folder="static", static_url_path="")
-
 
 # ───── Logging Setup ─────
 
@@ -84,13 +156,6 @@ LOG_BUFFER = deque(maxlen=1000)
 class FrontendBufferHandler(logging.Handler):
     def emit(self, record):
         LOG_BUFFER.append(self.format(record))
-
-# handler = FrontendBufferHandler()
-# formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-# handler.setFormatter(formatter)
-#
-# app.logger.addHandler(handler)
-# app.logger.setLevel(logging.INFO)
 
 # Standard formatter
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
@@ -108,19 +173,9 @@ app.logger.addHandler(file_handler)
 app.logger.addHandler(buffer_handler)
 app.logger.setLevel(logging.INFO)
 
-
-
 # ──────────────── DATABASE SETUP ────────────────
 DB_PATH = 'database/egh455.db'
 IMAGE_DIR = "/home/egh455-g5/DCIM"
-
-# db_config = {
-#     'host': 'localhost',
-#     'user': 'root',
-#     'password': 'raspi123',
-#     'database': 'pi_data'
-# }
-
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -251,11 +306,90 @@ def gen_frames():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
-# ──────────────── Camera and ENVIRO+ SENSOR SETUP ────────────────
-bus = smbus2.SMBus(1)
-ltr559 = LTR559()
-bme280_sensor = BME280(i2c_dev=bus)
-device, qRgb = init_depthai()
+# ──────────────── LCD CONTROL ROUTES ────────────────
+
+from threading import Thread
+
+lcd_loop_active = False
+current_mode = "ip"
+
+def lcd_show_message(text, color=(0, 170, 170)):
+    """Helper to draw a centered message on the LCD."""
+    global disp, draw, img, font
+    draw.rectangle((0, 0, WIDTH, HEIGHT), color)
+    x1, y1, x2, y2 = font.getbbox(text)
+    size_x = x2 - x1
+    size_y = y2 - y1
+    x = (WIDTH - size_x) / 2
+    y = (HEIGHT / 2) - (size_y / 2)
+    draw.text((x, y), text, font=font, fill=(255, 255, 255))
+    disp.display(img)
+
+@app.route("/lcd/on", methods=["POST"])
+def lcd_on():
+    """Turn the LCD backlight ON."""
+    try:
+        disp.set_backlight(True)
+        lcd_show_message("LCD ON")
+        return jsonify({"status": "ok", "message": "LCD backlight turned on"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/lcd/off", methods=["POST"])
+def lcd_off():
+    """Turn the LCD backlight OFF."""
+    try:
+        disp.set_backlight(False)
+        return jsonify({"status": "ok", "message": "LCD backlight turned off"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/lcd/show/<mode>", methods=["POST"])
+def lcd_show(mode):
+    """Show a specific display mode (ip, temperature, humidity, pressure)."""
+    global current_mode
+    try:
+        current_mode = mode
+        if mode == "ip":
+            lcd_show_message(ip)
+        elif mode == "temperature":
+            lcd_show_message(f"TEMP: {bme280.get_temperature():.1f}C")
+        elif mode == "humidity":
+            lcd_show_message(f"HUM: {bme280.get_humidity():.1f}%")
+        elif mode == "pressure":
+            lcd_show_message(f"PRES: {bme280.get_pressure():.1f}hPa")
+        else:
+            lcd_show_message(mode.upper())
+        return jsonify({"status": "ok", "message": f"LCD showing {mode}"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/lcd/loop", methods=["POST"])
+def lcd_loop_toggle():
+    """Toggle looping between sensor displays."""
+    global lcd_loop_active
+    lcd_loop_active = not lcd_loop_active
+
+    if lcd_loop_active:
+        Thread(target=lcd_loop_thread, daemon=True).start()
+        return jsonify({"status": "ok", "message": "LCD looping started"})
+    else:
+        return jsonify({"status": "ok", "message": "LCD looping stopped"})
+
+
+def lcd_loop_thread():
+    """Cycle through sensor values automatically."""
+    global lcd_loop_active
+    modes = ["temperature", "humidity", "pressure"]
+    while lcd_loop_active:
+        for mode in modes:
+            if not lcd_loop_active:
+                break
+            lcd_show(mode)
+            time.sleep(3)
 
 # ──────────────── ROUTES ────────────────
 
@@ -291,9 +425,9 @@ def video_feed():
 def get_enviro_data():
     """Read Enviro+ and return JSON."""
     try:
-        temperature = round(bme280_sensor.get_temperature(), 1)
-        pressure = round(bme280_sensor.get_pressure(), 1)
-        humidity = round(bme280_sensor.get_humidity(), 1)
+        temperature = round(bme280.get_temperature(), 1)
+        pressure = round(bme280.get_pressure(), 1)
+        humidity = round(bme280.get_humidity(), 1)
 
         gas_readings = gas.read_all()
         oxidising = round(gas_readings.oxidising / 1000, 3)   # kΩ
