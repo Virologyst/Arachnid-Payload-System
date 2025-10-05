@@ -1,8 +1,5 @@
 <script>
     import { onMount } from 'svelte';
-    import {
-        AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-    } from 'recharts';
 
     let backendLogs = [];
     let statusA = "unknown";
@@ -96,11 +93,11 @@
 
     let bars = [
         // { label: 'CO₂', key: 'co2', value: 0, max: 1000, color: 'green' },
-        { label: 'Ammonia', key: 'ammonia', value: 0, max: 1000, color: 'green' },
+        // { label: 'Ammonia', key: 'ammonia', value: 0, max: 1000, color: 'green' },
         { label: 'Temp', key: 'temperature', value: 0, max: 100, color: 'green' },
         { label: 'Humidity', key: 'humidity', value: 0, max: 100, color: 'green' },
-        { label: 'NH3', key: 'nh3', value: 0, max: 300, color: 'green' },
-        { label: 'Light', key: 'lux', value: 0, max: 1000, color: 'green' }
+        { label: 'NH3', key: 'nh3', value: 0, max: 2000, color: 'green' },
+        { label: 'Light', key: 'lux', value: 0, max: 500, color: 'green' }
     ];
 
     function updateBars() {
@@ -154,6 +151,17 @@
     function toggleMobileMenu() {
         mobileMenuOpen = !mobileMenuOpen;
     }
+
+    async function runDrill() {
+        try {
+            const res = await fetch('/drill', { method: 'POST' });
+            const data = await res.json();
+            log(`Drill: ${data.message}`, data.status === 'success' ? 'ACTION' : 'ERROR');
+        } catch (e) {
+            log(`Drill error: ${e}`, 'ERROR');
+        }
+    }
+
 </script>
 
 <style>
@@ -181,6 +189,7 @@
                     🌡 {enviro.temperature}°C | 💧 {enviro.humidity}% | 📈 {enviro.pressure}hPa
                 </div>
                 <div class="capture-overlay">
+                    <button type="button" class="drill-btn" on:click={runDrill}>Start Drill</button>
                     <button class="capture-btn" on:click={captureImage}>📸 Capture Image</button>
                 </div>
             </div>
@@ -199,22 +208,22 @@
                     {#if currentView === 'sensors'}
                         <div class="panel-sensors">
                             <h2>Sensor Data (Graph Connected to Database)</h2>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={historicData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis
-                                      dataKey="timestamp"
-                                      tick={{ fontSize: 10 }}
-                                      tickFormatter={(t) => new Date(t).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' })}
-                                    />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Legend />
-                                    <Area type="monotone" dataKey="temperature" stroke="#ff7300" fill="#ff7300" fillOpacity={0.3} />
-                                    <Area type="monotone" dataKey="humidity" stroke="#00c3ff" fill="#00c3ff" fillOpacity={0.3} />
-                                    <Area type="monotone" dataKey="pressure" stroke="#8884d8" fill="#8884d8" fillOpacity={0.2} />
-                                </AreaChart>
-                            </ResponsiveContainer>
+<!--                            <ResponsiveContainer width="100%" height={300}>-->
+<!--                                <AreaChart data={historicData}>-->
+<!--                                    <CartesianGrid strokeDasharray="3 3" />-->
+<!--                                    <XAxis-->
+<!--                                      dataKey="timestamp"-->
+<!--                                      tick={{ fontSize: 10 }}-->
+<!--                                      tickFormatter={(t) => new Date(t).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' })}-->
+<!--                                    />-->
+<!--                                    <YAxis />-->
+<!--                                    <Tooltip />-->
+<!--                                    <Legend />-->
+<!--                                    <Area type="monotone" dataKey="temperature" stroke="#ff7300" fill="#ff7300" fillOpacity={0.3} />-->
+<!--                                    <Area type="monotone" dataKey="humidity" stroke="#00c3ff" fill="#00c3ff" fillOpacity={0.3} />-->
+<!--                                    <Area type="monotone" dataKey="pressure" stroke="#8884d8" fill="#8884d8" fillOpacity={0.2} />-->
+<!--                                </AreaChart>-->
+<!--                            </ResponsiveContainer>-->
                         </div>
 
                     {:else if currentView === 'logs'}
@@ -254,6 +263,14 @@
                            <button on:click={updateDevice} disabled={loading} class="update-btn">
                                 Update & Restart
                             </button>
+
+                            <h3>LCD Controls</h3>
+                            <div class="lcd-controls">
+                                <button on:click={() => fetch('/lcd/on', {method: 'POST'})}>💡 LCD On</button>
+                                <button on:click={() => fetch('/lcd/off', {method: 'POST'})}>🌑 LCD Off</button>
+                                <button on:click={() => fetch('/lcd/show/ip', {method: 'POST'})}>📡 Show IP</button>
+                                <button on:click={() => fetch('/lcd/loop', {method: 'POST'})}>🔁 Loop Sensors</button>
+                            </div>
 
                             {#if loading}
                                 <div id="loading">
