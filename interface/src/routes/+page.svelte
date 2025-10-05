@@ -10,6 +10,8 @@
         const res = await fetch("/targets");
         const data = await res.json();
 
+        console.log('Data from targets: ', data)
+
         // Example mapping: first 3 detections → A, B, C
         statusA = data[0]?.type || "unknown";
         statusB = data[1]?.type || "unknown";

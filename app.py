@@ -290,11 +290,14 @@ if not os.path.exists(IMAGE_DIR):
 def capture_image():
     """Capture a single frame from DepthAI and save it."""
     try:
-        if qRgb is None:
-            return jsonify({"status": "error", "message": "Camera not initialized"}), 500
 
-        inRgb = qRgb.get()
-        frame = inRgb.getCvFrame()
+        # if qRgb is None:
+        #     return jsonify({"status": "error", "message": "Camera not initialized"}), 500
+        #
+        # inRgb = qRgb.get()
+        # frame = inRgb.getCvFrame()
+
+        frame = target_system.get_image_bytes(encode=False)
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{IMAGE_DIR}/capture_{timestamp}.jpg"
