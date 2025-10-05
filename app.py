@@ -330,7 +330,7 @@ def lcd_on():
     """Turn the LCD backlight ON."""
     try:
         disp.set_backlight(True)
-        lcd_show_message("LCD ON")
+        lcd_show_message(ip)
         return jsonify({"status": "ok", "message": "LCD backlight turned on"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -389,7 +389,7 @@ def lcd_loop_thread():
             if not lcd_loop_active:
                 break
             lcd_show(mode)
-            time.sleep(3)
+            time.sleep(1)
 
 # ──────────────── ROUTES ────────────────
 
