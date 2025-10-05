@@ -6,11 +6,16 @@ import cv2
 import math
 import time
 import threading
+import traceback
 
 class DetectionType(Enum):
     AruCo = "AruCo"
-    Valve = "Valve"
-    Gauge = "Gauge"
+    ValveOpen = "ValveOpen"
+    ValveClosed = "ValveClosed"
+    NeedleCenter = "NeedleCenter"
+    NeedleTip = "NeedleTip"
+    FireExtinguisher = "FireExtinguisher"
+
 
 @dataclass 
 class Detection:
@@ -21,6 +26,11 @@ class Detection:
     width: int
     height: int
     angle: Optional[float] # Angle in degrees, only for Gauge type detections
+
+    def __repr__(self):
+        return (f"Detection(type={self.type}, conf={self.confidence:.2f}, "
+                f"x={self.x}, y={self.y}, w={self.width}, h={self.height}, "
+                f"angle={self.angle})")
 
 
 class TargetDetectionInterface:
@@ -83,9 +93,13 @@ class TargetDetectionInterface:
             next_t = now + period
 
             try:
-                frame, detections = self.execute()
+                output = self.execute()
+                if output is None:
+                    continue
+                frame, detections = output
             except Exception as e:
                 #Keep loop alive on error
+                print(traceback.format_exc())
                 print(f"Error in TargetDetectionInterface _run: {e}")
                 continue
 
