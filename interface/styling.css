@@ -153,6 +153,7 @@ main {
 }
 
 /* === CAMERA PANE === */
+
 .camera-pane {
     flex: 2;
     background: #000;
@@ -350,6 +351,7 @@ main {
 }
 
 .capture-btn {
+    width: 200px;
     pointer-events: auto;
     padding: 10px 20px;
     font-size: 1.2em;
@@ -363,6 +365,28 @@ main {
     margin-right: 10px;
 }
 
+.capture-btn:hover {
+    background: #ff6600;
+}
+
+.drill-btn {
+    width: 200px;
+    pointer-events: auto;
+    margin-right: 10px;
+    background-color: #5c5;
+    color: black;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    font-size: 16px;
+    /*z-index: 9999;*/
+}
+
+.drill-btn:hover {
+    background: #97bd7e;
+}
 
 .readings-table {
     flex: 1;
@@ -388,9 +412,7 @@ main {
     padding: 0;
 }
 
-.capture-btn:hover {
-    background: #ff6600;
-}
+
 
 /* Thumbnails */
 .sidebar img {
@@ -495,10 +517,19 @@ main {
 /* === RESPONSIVE DESIGN === */
 @media (max-width: 768px) {
 
+    .capture-btn .drill-btn {
+        width: 180px;
+    }
+
+    .sensor-overlay {
+        display: none;
+    }
+
     .enviro-card-mobile {
         display: flex;
         flex: 2;
-        padding: 15px
+        padding: 15px;
+        font-size: 12px;
     }
 
     .readings-table {
