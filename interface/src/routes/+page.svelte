@@ -394,10 +394,10 @@
                     <div class="readings-table">
                         <table border="1" cellpadding="5">
                             <thead>
-                                <tr><th>Target</th><th>Current Status</th></tr>
+                                <tr><th>Target</th><th>Current Status</th><th>Value</th></tr>
                             </thead>
                             <tbody>
-                                <tr><td class="label">Gauge:</td><td class="status">{status}</td><td class="Value">{value}</td></tr>
+                                <tr><td class="label">Gauge:</td><td class="status">{status}</td><td class="status">{value}</td></tr>
 <!--                                <tr><td class="label">B:</td><td class="status">{statusB}</td></tr>-->
 <!--                                <tr><td class="label">C:</td><td class="status">{statusC}</td></tr>-->
                             </tbody>
