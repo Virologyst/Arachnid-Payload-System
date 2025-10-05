@@ -198,6 +198,7 @@ class TargetDetection(TargetDetectionInterface):
         dets = self._parse_detections(dmsg)
         dets = self._filter_gauges(dets)
         frame = draw_detections(frame, dets)
+        frame = self._encode_np_bgr_to_mjpeg(frame)
 
         return frame, dets
     
