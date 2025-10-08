@@ -42,7 +42,7 @@ Device.pin_factory = LGPIOFactory()
 # import curses
 # from time import sleep
 
-# ──────────────── Drilling Mechanism (Nicky)────────────────
+# ──────────────── Drilling Mechanism (Nicky ────────────────
 
 # detections = target_system.get_gauge_pressure()
 # Note to Nicky - pressure plate detection target_system.get_gauge_pressure() - Lower limit 2 Bar. Needs low pass filter
@@ -51,9 +51,9 @@ Device.pin_factory = LGPIOFactory()
 
 time.sleep(1)
 
-# Initialize Servo (GPIO pin 18)
+# Initialize Servo (GPIO pin 13)
 servo = AngularServo(
-    18,
+    13,
     min_angle=0,
     max_angle=360,
     min_pulse_width=0.0005,
@@ -133,7 +133,7 @@ try:
     x = (WIDTH - size_x) / 2
     y = (HEIGHT / 2) - (size_y / 2)
 
-    # rite text.
+    # write text.
     draw.rectangle((0, 0, 160, 80), back_colour)
     draw.text((x, y), message, font=font, fill=text_colour)
     disp.display(img)
@@ -240,62 +240,16 @@ def gen_frames():
 
             yield frame_bytes
 
-# def gen_frames():
-#     """Generate MJPEG frames from DepthAI."""
-#     if qRgb is None:
-#         while True:
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + b'' + b'\r\n')
-#     else:
-#         while True:
-#             inRgb = qRgb.get()
-#             frame = inRgb.getCvFrame()
-#             ret, buffer = cv2.imencode('.jpg', frame)
-#             if not ret:
-#                 continue
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
 # ──────────────── DEPTHAI CAMERA ────────────────
 
 if not os.path.exists(IMAGE_DIR):
     os.makedirs(IMAGE_DIR)
 
-# pipeline = dai.Pipeline()
-#
-# camRgb = pipeline.create(dai.node.ColorCamera)
-# camRgb.setBoardSocket(dai.CameraBoardSocket.CAM_A)
-# camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-# camRgb.setInterleaved(False)
-#
-# xoutRgb = pipeline.create(dai.node.XLinkOut)
-# xoutRgb.setStreamName("rgb")
-# camRgb.video.link(xoutRgb.input)
-
-# def init_depthai():
-#     for i in range(10):
-#         try:
-#             device = dai.Device(pipeline)
-#             print("Camera initialized.")
-#             return device, device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
-#         except RuntimeError as e:
-#             print(f"DepthAI init failed (attempt {i+1}): {e}")
-#             time.sleep(5)
-#     print("Camera failed after retries. Running without camera.")
-#     return None, None
-#
-# device, qRgb = init_depthai()
-
 @app.route("/capture", methods=["POST"])
 def capture_image():
     """Capture a single frame from DepthAI and save it."""
     try:
-
-        # if qRgb is None:
-        #     return jsonify({"status": "error", "message": "Camera not initialized"}), 500
-        #
-        # inRgb = qRgb.get()
-        # frame = inRgb.getCvFrame()
 
         frame = target_system.get_image_bytes(encode=False)
 
@@ -334,20 +288,6 @@ def delete_image(filename):
     except FileNotFoundError:
         return jsonify({"status": "error", "message": "File not found"}), 404
 
-# def init_depthai():
-#     for i in range(10):
-#         try:
-#             device = dai.Device(pipeline)
-#             print("Camera initialized.")
-#             return device, device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
-#         except RuntimeError as e:
-#             print(f"DepthAI init failed (attempt {i+1}): {e}")
-#             time.sleep(5)
-#     print("Camera failed after retries. Running without camera.")
-#     return None, None
-
-
-
 # ──────────────── LCD CONTROL ROUTES (Charlie)  ────────────────
 
 from threading import Thread
@@ -355,17 +295,8 @@ from threading import Thread
 lcd_loop_active = False
 current_mode = "ip"
 
-# def lcd_show_message(text, color=(0, 170, 170)):
-#     """Helper to draw a centered message on the LCD."""
-#     global disp, draw, img, font
-#     draw.rectangle((0, 0, WIDTH, HEIGHT), color)
-#     x1, y1, x2, y2 = font.getbbox(text)
-#     size_x = x2 - x1
-#     size_y = y2 - y1
-#     x = (WIDTH - size_x) / 2
-#     y = (HEIGHT / 2) - (size_y / 2)
-#     draw.text((x, y), text, font=font, fill=(255, 255, 255))
-#     disp.display(img)
+frame = target_system.get_image_bytes(encode=False) # <-- gets the taget image frame
+proximity = ltr559.get_proximity #<-- proximity trigger
 
 def lcd_show_message(title, value=None):
     """Render text on the LCD with title + value formatting (stacked lines)."""
@@ -507,44 +438,12 @@ def serve_static_files(path):
     """Serve static files (JS, CSS, images)."""
     return send_from_directory(app.static_folder, path)
 
-# If needed we can switch later
-# @app.route("/detection/switch/<system>", methods=["POST"])
-# def switch_detection_system(system):
-#     """Switch between different detection subsystems (e.g., Dummy, AruCo, Valve)."""
-#     global active_detection_system
-#
-#     # Stop
-#     if active_detection_system:
-#         active_detection_system.stop()
-#
-#     # system ???
-#     system = system.lower()
-#     if system == "dummy":
-#         active_detection_system = TargetDetectionDummy()
-#     # elif system == "aruco":
-#     #     active_detection_system = TargetDetectionAruCo()
-#     # elif system == "valve":
-#     #     active_detection_system = TargetDetectionValve()
-#     else:
-#         return
-#
-#     active_detection_system.start()
-#     return jsonify({"status": "ok", "message": f"Switched to {system} detection system"})
-
 @app.route("/video_feed")
 def video_feed():
     """Stream Target feed from target_detection."""
     return Response(
         gen_frames(),
         mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# @app.route("/live_feed")
-# def video_feed():
-#     """Stream DepthAI feed as MJPEG."""
-#     return Response(
-#         gen_frames(),
-#         mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
 @app.route('/enviro')
 def get_enviro_data():
@@ -644,12 +543,13 @@ def status():
 def get_targets():
 
     """Expose latest detections as JSON."""
-    # return jsonify([d.__dict__ for d in dets])
     # ???
     detections = target_system.get_detections()
     print("Targets:", detections)
 
-    data = get_guage_pressure()
+
+
+    data = target_system.get_gauge_pressure()
 
     dets = [
         {
@@ -664,7 +564,7 @@ def get_targets():
         for det in detections
     ]
 
-    return jsonify({"detections": dets})
+    return jsonify({ "detections": dets, "data": data })
     # return jsonify({})
 
 if __name__ == '__main__':
