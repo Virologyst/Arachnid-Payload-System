@@ -403,29 +403,59 @@ def lcd_loop_toggle():
 def lcd_loop_thread():
     """Cycle through sensor values automatically."""
     global lcd_loop_active
-    modes = ["temperature", "humidity", "pressure"]
-    delay = 5  # seconds per mode
 
-    while lcd_loop_active:
-        for mode in modes:
-            if not lcd_loop_active:
-                return  # gracefully exit loop if toggled off
+    # Tuning factor for compensation. Decrease this number to adjust the
+    # temperature down, and increase to adjust up
+    factor = 2.25
 
-            try:
-                if mode == "temperature":
-                    val = f"TEMP: {bme280.get_temperature():.1f}C"
-                elif mode == "humidity":
-                    val = f"HUM: {bme280.get_humidity():.1f}%"
-                elif mode == "pressure":
-                    val = f"PRES: {bme280.get_pressure():.1f}hPa"
-                else:
-                    val = mode.upper()
+    cpu_temps = [get_cpu_temperature()] * 5
 
-                lcd_show_message(val)
-            except Exception as e:
-                print(f"[LCD LOOP ERROR] {e}")
+    delay = 0.5  # Debounce the proximity tap
+    mode = 0  # The starting mode
+    last_page = 0
+    light = 1
 
-            time.sleep(delay)
+    # Create a values dict to store the data
+    variables = ["ip-address",
+                "target-detections",
+                "temperature"]
+
+    values = {}
+
+    for v in variables:
+        values[v] = [1] * WIDTH
+
+    # The main loop
+    try:
+        while True:
+            proximity = ltr559.get_proximity()
+
+            # If the proximity crosses the threshold, toggle the mode
+            if proximity > 1500 and time.time() - last_page > delay:
+                mode += 1
+                mode %= len(variables)
+                last_page = time.time()
+
+            # One mode for each variable
+            if mode == 0:
+                # show ip-address
+                lcd_show_message(ip)
+
+            if mode == 1:
+                # variable = "target-detections"
+                detection = target_system.get_image_bytes(encode=False)
+                disp.display(detection)
+
+            if mode == 2:
+                # variable = "temperature"
+                unit = "°C"
+                cpu_temp = get_cpu_temperature()
+                # Smooth out with some averaging to decrease jitter
+                cpu_temps = cpu_temps[1:] + [cpu_temp]
+                avg_cpu_temp = sum(cpu_temps) / float(len(cpu_temps))
+                raw_temp = bme280.get_temperature()
+                data = raw_temp - ((avg_cpu_temp - raw_temp) / factor)
+                display_text(variables[mode], data, unit)
 
 # ──────────────── ROUTES ────────────────
 
