@@ -266,9 +266,10 @@
 
                     {:else if currentView === 'logs'}
 
-<!--                        <div class="logs-panel">-->
-<!--                            <h2>Live Logs</h2>-->
-<!--                            <div class="log-feed">-->
+                        <div class="logs-panel">
+                            <h2>Live Logs</h2>
+                            <div class="log-feed">
+
 <!--                                {#each logs as logItem}-->
 <!--                                    <div class="log-entry {logItem.type.toLowerCase()}">-->
 <!--                                        <span class="log-time">[{logItem.timestamp}]</span>-->
@@ -276,19 +277,20 @@
 <!--                                        <span class="log-msg">{logItem.message}</span>-->
 <!--                                    </div>-->
 <!--                                {/each}-->
-<!--                            </div>-->
-<!--                        </div>-->
 
-                        {#each filteredLogs as logItem}
-                            <div class="log-entry {logItem.type.toLowerCase()}">
-                                <span class="log-time">[{logItem.timestamp}]</span>
-                                <span class="log-type"
-                                      style="color: {logItem.type === 'TARGET' ? 'red' : ''}">
-                                      [{logItem.type}]
-                                </span>
-                                <span class="log-msg">{logItem.message}</span>
+                                {#each filteredLogs as logItem}
+                                    <div class="log-entry {logItem.type.toLowerCase()}">
+                                        <span class="log-time">[{logItem.timestamp}]</span>
+                                        <span class="log-type"
+                                              style="color: {logItem.type === 'TARGET' ? 'red' : ''}">
+                                              [{logItem.type}]
+                                        </span>
+                                        <span class="log-msg">{logItem.message}</span>
+                                    </div>
+                                {/each}
+
                             </div>
-                        {/each}
+                        </div>
 
                         <div class="filter-bar">
                           <label>From:</label>
