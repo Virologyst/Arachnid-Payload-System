@@ -8,10 +8,29 @@
     let selectedImage = null;
     let modalImage = null;
 
-    async function fetchThumbnails() {
+    // async function fetchThumbnails() {
+    //     const res = await fetch('/images');
+    //     const data = await res.json();
+    //     thumbnails = data.images || [];
+    // }
+
+	async function fetchThumbnails() {
         const res = await fetch('/images');
         const data = await res.json();
-        thumbnails = data.images || [];
+
+        // map filenames to objects with timestamp
+        thumbnails = (data.images || []).map(img => {
+            // try to extract a timestamp from the filename, e.g. "image_20251008_192715.jpg"
+            const match = img.match(/(\d{8}_\d{6})/);
+            let timestamp = "unknown";
+            if (match) {
+                const raw = match[1];
+                const date = `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`;
+                const time = `${raw.slice(9,11)}:${raw.slice(11,13)}:${raw.slice(13,15)}`;
+                timestamp = `${date} ${time}`;
+            }
+            return { name: img, timestamp };
+        });
     }
 
     function openModal(filename) {
@@ -50,6 +69,18 @@
         padding: 20px;
         background: #0a0f1a;
         color: white;
+    }
+
+	.thumb-container {
+        position: relative;
+        text-align: center;
+    }
+
+	.timestamp {
+        font-size: 12px;
+        color: #bbb;
+        margin-top: 4px;
+        display: block;
     }
 
     .thumb {
@@ -139,13 +170,16 @@
 
 <div class="gallery">
     {#each thumbnails as img}
-        <img
-            src={`/images/${img}`}
-            alt={img}
-            class="thumb"
-            on:click={() => openModal(img)}
-            on:contextmenu={(e) => openContextMenu(e, img)}
-        />
+        <div class="thumb-container">
+            <img
+                src={`/images/${img.name}`}
+                alt={img.name}
+                class="thumb"
+                on:click={() => openModal(img.name)}
+                on:contextmenu={(e) => openContextMenu(e, img.name)}
+            />
+            <span class="timestamp">{img.timestamp}</span>
+        </div>
     {/each}
 </div>
 
