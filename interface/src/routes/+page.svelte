@@ -6,12 +6,34 @@
     let value = "unknown";
 
 
+    // async function fetchTargets() {
+    //     const res = await fetch("/targets");
+    //     const data = await res.json();
+    //
+    //     console.log('Data from targets: ', data)
+    //
+    // }
+
     async function fetchTargets() {
-        const res = await fetch("/targets");
-        const data = await res.json();
+        try {
+            const res = await fetch("/targets");
+            const data = await res.json();
 
-        console.log('Data from targets: ', data)
-
+            // Log every key/value or just a summary
+            if (Array.isArray(data)) {
+                data.forEach(target => {
+                    log(`Target detected: ${JSON.stringify(target)}`, 'TARGET');
+                });
+            } else if (typeof data === 'object') {
+                for (const [k, v] of Object.entries(data)) {
+                    log(`${k}: ${v}`, 'TARGET');
+                }
+            } else {
+                log(`Target update: ${data}`, 'TARGET');
+            }
+        } catch (err) {
+            log(`Target fetch error: ${err}`, 'ERROR');
+        }
     }
 
     async function fetchBackendLogs() {
@@ -244,18 +266,29 @@
 
                     {:else if currentView === 'logs'}
 
-                        <div class="logs-panel">
-                            <h2>Live Logs</h2>
-                            <div class="log-feed">
-                                {#each logs as logItem}
-                                    <div class="log-entry {logItem.type.toLowerCase()}">
-                                        <span class="log-time">[{logItem.timestamp}]</span>
-                                        <span class="log-type">[{logItem.type}]</span>
-                                        <span class="log-msg">{logItem.message}</span>
-                                    </div>
-                                {/each}
+<!--                        <div class="logs-panel">-->
+<!--                            <h2>Live Logs</h2>-->
+<!--                            <div class="log-feed">-->
+<!--                                {#each logs as logItem}-->
+<!--                                    <div class="log-entry {logItem.type.toLowerCase()}">-->
+<!--                                        <span class="log-time">[{logItem.timestamp}]</span>-->
+<!--                                        <span class="log-type">[{logItem.type}]</span>-->
+<!--                                        <span class="log-msg">{logItem.message}</span>-->
+<!--                                    </div>-->
+<!--                                {/each}-->
+<!--                            </div>-->
+<!--                        </div>-->
+
+                        {#each filteredLogs as logItem}
+                            <div class="log-entry {logItem.type.toLowerCase()}">
+                                <span class="log-time">[{logItem.timestamp}]</span>
+                                <span class="log-type"
+                                      style="color: {logItem.type === 'TARGET' ? 'red' : ''}">
+                                      [{logItem.type}]
+                                </span>
+                                <span class="log-msg">{logItem.message}</span>
                             </div>
-                        </div>
+                        {/each}
 
                         <div class="filter-bar">
                           <label>From:</label>
