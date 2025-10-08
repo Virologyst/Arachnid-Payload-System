@@ -192,7 +192,9 @@
     }
 
     onMount(() => {
+
         log('App initialized', 'INFO');
+        fetchBackendLogs();
         fetchHistory();
         setInterval(fetchHistory, 4000);
         fetchEnviro();
@@ -201,7 +203,6 @@
         setInterval(fetchTargets, 4000);
         fetchThumbnails();
         setInterval(fetchThumbnails, 4000); // 4s
-        fetchBackendLogs();
         checkMobile();
         fetchTargets();
         window.addEventListener("resize", checkMobile);
