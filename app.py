@@ -391,7 +391,7 @@ def lcd_show(mode):
 def lcd_loop_toggle():
     """Toggle looping between sensor displays."""
     global lcd_loop_active
-    lcd_loop_active = not lcd_loop_active
+    lcd_loop_active = True
 
     if lcd_loop_active:
         Thread(target=lcd_loop_thread, daemon=True).start()
