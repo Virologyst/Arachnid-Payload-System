@@ -308,8 +308,8 @@ from threading import Thread
 lcd_loop_active = True
 current_mode = "ip"
 
-frame = target_system.get_image_bytes(encode=False) # <-- gets the taget image frame
-proximity = ltr559.get_proximity #<-- proximity trigger
+print(lcd_loop_active)
+
 
 def lcd_show_message(title, value=None):
     """Render text on the LCD with title + value formatting (stacked lines)."""
@@ -366,32 +366,32 @@ def lcd_off():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-@app.route("/lcd/show/<mode>", methods=["POST"])
-def lcd_show(mode):
-    """Show a specific display mode (ip, temperature, humidity, pressure)."""
-    global current_mode
-    try:
-        current_mode = mode
-        if mode == "ip":
-            lcd_show_message(ip)
-        elif mode == "temperature":
-            lcd_show_message(f"TEMP: {bme280.get_temperature():.1f}C")
-        elif mode == "humidity":
-            lcd_show_message(f"HUM: {bme280.get_humidity():.1f}%")
-        elif mode == "pressure":
-            lcd_show_message(f"PRES: {bme280.get_pressure():.1f}hPa")
-        else:
-            lcd_show_message(mode.upper())
-        return jsonify({"status": "ok", "message": f"LCD showing {mode}"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+# @app.route("/lcd/show/<mode>", methods=["POST"])
+# def lcd_show(mode):
+#     """Show a specific display mode (ip, temperature, humidity, pressure)."""
+#     global current_mode
+#     try:
+#         current_mode = mode
+#         if mode == "ip":
+#             lcd_show_message(ip)
+#         elif mode == "temperature":
+#             lcd_show_message(f"TEMP: {bme280.get_temperature():.1f}C")
+#         elif mode == "humidity":
+#             lcd_show_message(f"HUM: {bme280.get_humidity():.1f}%")
+#         elif mode == "pressure":
+#             lcd_show_message(f"PRES: {bme280.get_pressure():.1f}hPa")
+#         else:
+#             lcd_show_message(mode.upper())
+#         return jsonify({"status": "ok", "message": f"LCD showing {mode}"})
+#     except Exception as e:
+#         return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route("/lcd/loop", methods=["POST"])
 def lcd_loop_toggle():
     """Toggle looping between sensor displays."""
     global lcd_loop_active
-    lcd_loop_active = not lcd_loop_active
+    # lcd_loop_active = not lcd_loop_active
 
     if lcd_loop_active:
         Thread(target=lcd_loop_thread, daemon=True).start()
@@ -403,6 +403,10 @@ def lcd_loop_toggle():
 def lcd_loop_thread():
     """Cycle through sensor values automatically."""
     global lcd_loop_active
+
+    ip = get_ip()
+    frame = target_system.get_image_bytes(encode=False) # <-- gets the taget image frame
+    proximity = ltr559.get_proximity()
 
     # Tuning factor for compensation. Decrease this number to adjust the
     # temperature down, and increase to adjust up
@@ -428,8 +432,6 @@ def lcd_loop_thread():
     # The main loop
     try:
         while lcd_loop_active:
-            proximity = ltr559.get_proximity()
-
             # If the proximity crosses the threshold, toggle the mode
             if proximity > 1500 and time.time() - last_page > delay:
                 mode += 1
