@@ -305,7 +305,7 @@ def delete_image(filename):
 
 from threading import Thread
 
-lcd_loop_active = False
+lcd_loop_active = True
 current_mode = "ip"
 
 frame = target_system.get_image_bytes(encode=False) # <-- gets the taget image frame
@@ -391,7 +391,7 @@ def lcd_show(mode):
 def lcd_loop_toggle():
     """Toggle looping between sensor displays."""
     global lcd_loop_active
-    lcd_loop_active = True
+    lcd_loop_active = not lcd_loop_active
 
     if lcd_loop_active:
         Thread(target=lcd_loop_thread, daemon=True).start()
