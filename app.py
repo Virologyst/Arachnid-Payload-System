@@ -457,6 +457,9 @@ def lcd_loop_thread():
                 data = raw_temp - ((avg_cpu_temp - raw_temp) / factor)
                 display_text(variables[mode], data, unit)
 
+    except Exception as e:
+        print(f"[LCD LOOP ERROR] {e}")
+
 # ──────────────── ROUTES ────────────────
 
 @app.route('/drill', methods=['POST'])
