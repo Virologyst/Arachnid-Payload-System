@@ -17,7 +17,7 @@ import sqlite3
 from flask import (
     Flask, Response, jsonify,
     send_from_directory, render_template_string,
-    send_file
+    send_file, request
 )
 
 # --- Enviro+ sensors ---
@@ -154,6 +154,13 @@ os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "egh455.log")
 
 LOG_BUFFER = deque(maxlen=1000)
+
+# Load existing logs from file at startup
+if os.path.exists(LOG_FILE):
+    with open(LOG_FILE, "r") as f:
+        lines = f.readlines()[-1000:]  # only keep latest 1000 lines
+        for line in lines:
+            LOG_BUFFER.append(line.strip())
 
 class FrontendBufferHandler(logging.Handler):
     def emit(self, record):
@@ -424,10 +431,40 @@ def drill_endpoint():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route("/logs")
-def get_logs():
-    """Return last 50 backend logs."""
-    return jsonify(list(LOG_BUFFER))
+@app.route("/logs", methods=["GET", "POST"])
+def logs_endpoint():
+    """GET returns backend logs; POST appends a new one from the frontend."""
+    if request.method == "GET":
+        logs_list = []
+        for entry in list(LOG_BUFFER):
+            try:
+                timestamp, rest = entry.split(" [", 1)
+                log_type, message = rest.split("] ", 1)
+                logs_list.append({
+                    "timestamp": timestamp.strip(),
+                    "type": log_type.strip(),
+                    "message": message.strip()
+                })
+            except Exception:
+                logs_list.append({
+                    "timestamp": "",
+                    "type": "INFO",
+                    "message": entry
+                })
+        return jsonify(logs_list)
+
+    elif request.method == "POST":
+        data = None
+        try:
+            data = request.get_json(force=True)
+            msg = data.get("message", "")
+            lvl = data.get("type", "INFO").upper()
+            app.logger.info(f"[{lvl}] {msg}")
+            return jsonify({"status": "ok"})
+        except Exception as e:
+            app.logger.error(f"Failed to append log: {e} | data={data}")
+            return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route("/")
 def serve_index():
     """Serve the Svelte-built index.html."""

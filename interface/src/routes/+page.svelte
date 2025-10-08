@@ -5,15 +5,6 @@
     let status = "unknown";
     let value = "unknown";
 
-
-    // async function fetchTargets() {
-    //     const res = await fetch("/targets");
-    //     const data = await res.json();
-    //
-    //     console.log('Data from targets: ', data)
-    //
-    // }
-
     async function fetchTargets() {
         try {
             const res = await fetch("/targets");
@@ -38,7 +29,10 @@
 
     async function fetchBackendLogs() {
         const res = await fetch('/logs');
-        backendLogs = await res.json();
+        // backendLogs = await res.json();
+        const data = await res.json();
+        // Merge backend logs into your local list
+        logs = data.concat(logs).slice(-MAX_LOGS).reverse();
     }
 
     let isMobile = false;
@@ -51,10 +45,25 @@
     let logs = [];
     const MAX_LOGS = 1000;
 
+    // function log(message, type = 'INFO') {
+    //     const timestamp = new Date().toLocaleTimeString();
+    //     logs = [{ timestamp, message, type }, ...logs].slice(0, MAX_LOGS);
+    //     // console.log(`[${type}] ${message}`);
+    // }
+
     function log(message, type = 'INFO') {
         const timestamp = new Date().toLocaleTimeString();
-        logs = [{ timestamp, message, type }, ...logs].slice(0, MAX_LOGS);
-        // console.log(`[${type}] ${message}`);
+        const entry = { timestamp, message, type };
+
+        // Keep local list up to date
+        logs = [entry, ...logs].slice(0, MAX_LOGS);
+
+        // Push to backend for persistence
+        fetch('/logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(entry)
+        }).catch(() => {});
     }
 
      // Filters
@@ -214,7 +223,6 @@
     }
 
 
-
 </script>
 
 <style>
@@ -269,14 +277,6 @@
                         <div class="logs-panel">
                             <h2>Live Logs</h2>
                             <div class="log-feed">
-
-<!--                                {#each logs as logItem}-->
-<!--                                    <div class="log-entry {logItem.type.toLowerCase()}">-->
-<!--                                        <span class="log-time">[{logItem.timestamp}]</span>-->
-<!--                                        <span class="log-type">[{logItem.type}]</span>-->
-<!--                                        <span class="log-msg">{logItem.message}</span>-->
-<!--                                    </div>-->
-<!--                                {/each}-->
 
                                 {#each filteredLogs as logItem}
                                     <div class="log-entry {logItem.type.toLowerCase()}">
