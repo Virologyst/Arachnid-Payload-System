@@ -1,14 +1,61 @@
 <!DOCTYPE html>
+
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>EGH455 Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const updateBtn = document.getElementById("updateBtn");
+            updateBtn.addEventListener("click", function() {
+                // Show loading spinner
+                document.getElementById("loading").style.display = "block";
+
+                // Disable the button to prevent double clicks
+                updateBtn.disabled = true;
+
+                fetch("/update", { method: "POST" })
+                    .then(() => {
+                        // Wait for the Pi to restart the service
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 5000); // 5s
+                    });
+                });
+            });
+        </script>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const panel = document.getElementById("dynamicPanel");
+
+                function loadPanel(view) {
+                    fetch(`/panel/${view}`)
+                        .then(r => r.text())
+                        .then(html => {
+                            panel.innerHTML = html;
+                        });
+                }
+
+                // Attach listeners for each tab
+                document.getElementById("btnSensors").addEventListener("click", () => loadPanel('sensors'));
+                document.getElementById("btnLogs").addEventListener("click", () => loadPanel('logs'));
+                document.getElementById("btnTargets").addEventListener("click", () => loadPanel('targets'));
+                document.getElementById("btnSystem").addEventListener("click", () => loadPanel('system'));
+
+                // Load default view on page load
+                loadPanel('sensors');
+            });
+        </script>
+
 </head>
+
 <body>
     <header>
-        <h1>EGH455 Dashboard</h1>
+        <h1>EGH455 - Team 5</h1>
     </header>
     <main>
         <div class="sidebar">
@@ -24,18 +71,24 @@
         </div>
         <div class="content">
             <div class="top-row">
-                <div class="image-display">
-<!--                    <p>Current Image</p>-->
-                    <img src="/static/download.jpeg" alt="Current Image" style="width:100%; height: calc(100% - 40px);">
+
+                  <!-- LEFT SIDE: Camera -->
+                <div class="camera-pane">
+                    <!-- Placeholder: replace with RTSP/MJPEG later -->
+                    <img src="/static/mars.jpg" alt="Live Camera Feed">
                 </div>
-                <div class="graph-area">
-                    <div class="tabs">
-                        <span>Position</span>
-                        <span>CO₂</span>
-                        <span>Temperature</span>
-                        <span>Humidity</span>
+
+                <!-- RIGHT SIDE: Dynamic Panel -->
+                <div class="panel-pane">
+                    <div class="tab-buttons">
+                        <button id="btnSensors">Sensor Data</button>
+                        <button id="btnLogs">📜 Logs</button>
+                        <button id="btnTargets">🎯 Targets</button>
+                        <button id="btnSystem">⚙ System</button>
                     </div>
-                    <img src="/static/graphs.png" alt="Graph" style="width:100%; height: 80%;">
+                    <div id="dynamicPanel">
+                        <!-- Content loads here dynamically -->
+                    </div>
                 </div>
             </div>
             <div class="bottom-row">
@@ -62,17 +115,22 @@
                     </div>
                 </div>
             </div>
-            <form action="/update" method="POST" style="display:inline;">
-                <button type="submit" style="background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer;">
-                    🔄 Update & Restart
-                </button>
-            </form>
 
-            <form action="/restart" method="POST" style="display:inline; margin-left:10px;">
-                <button type="submit" style="background: #f44336; color: white; padding: 10px; border: none; cursor: pointer;">
-                    🔁 Restart App
-                </button>
-            </form>
+            <button id="updateBtn" style="background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer;">
+                🔄 Update & Restart
+            </button>
+
+            <div id="loading" style="display:none; margin-top: 10px;">
+                <img src="/static/loading.gif" alt="Loading..." style="width: 50px;">
+                <p>Updating... please wait</p>
+            </div>
+
+<!--            <form action="/restart" method="POST" style="display:inline; margin-left:10px;">-->
+<!--                <button type="submit" style="background: #f44336; color: white; padding: 10px; border: none; cursor: pointer;">-->
+<!--                    Restart RasPi-->
+<!--                </button>-->
+<!--            </form>-->
+
         </div>
     </main>
 </body>

@@ -1,0 +1,97 @@
+{
+    "input_model": "shared_with_container/models/model.onnx",
+    "input_bin": null,
+    "input_file_type": "ONNX",
+    "inputs": [
+        {
+            "name": "images",
+            "shape": [
+                1,
+                3,
+                416,
+                416
+            ],
+            "layout": "NCHW",
+            "data_type": "float32",
+            "calibration": {
+                "max_images": 20,
+                "min_value": 0.0,
+                "max_value": 255.0,
+                "mean": 127.5,
+                "std": 35.0,
+                "data_type": "float32"
+            },
+            "scale_values": [
+                0.0039215686,
+                0.0039215686,
+                0.0039215686
+            ],
+            "mean_values": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "frozen_value": null,
+            "encoding": {
+                "from_": "RGB",
+                "to": "BGR"
+            }
+        }
+    ],
+    "outputs": [
+        {
+            "name": "output0",
+            "shape": [
+                1,
+                10647,
+                11
+            ],
+            "layout": "NCD",
+            "data_type": "float32"
+        }
+    ],
+    "keep_intermediate_outputs": true,
+    "disable_onnx_simplification": false,
+    "disable_onnx_optimization": false,
+    "output_remote_url": null,
+    "intermediate_outputs_remote_url": null,
+    "put_file_plugin": null,
+    "hailo": {
+        "disable_calibration": false,
+        "optimization_level": 2,
+        "compression_level": 2,
+        "batch_size": 8,
+        "disable_compilation": false,
+        "alls": [],
+        "hw_arch": "hailo8"
+    },
+    "rvc2": {
+        "disable_calibration": false,
+        "mo_args": [],
+        "compile_tool_args": [],
+        "compress_to_fp16": true,
+        "number_of_shaves": 8,
+        "superblob": true
+    },
+    "rvc3": {
+        "disable_calibration": false,
+        "mo_args": [],
+        "compile_tool_args": [],
+        "compress_to_fp16": true,
+        "pot_target_device": "VPU"
+    },
+    "rvc4": {
+        "disable_calibration": false,
+        "compress_to_fp16": false,
+        "snpe_onnx_to_dlc_args": [],
+        "snpe_dlc_quant_args": [],
+        "snpe_dlc_graph_prepare_args": [],
+        "keep_raw_images": false,
+        "use_per_channel_quantization": true,
+        "use_per_row_quantization": false,
+        "optimization_level": 2,
+        "htp_socs": [
+            "sm8550"
+        ]
+    }
+}
