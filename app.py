@@ -427,7 +427,7 @@ def lcd_loop_thread():
 
     # The main loop
     try:
-        while True:
+        while lcd_loop_active:
             proximity = ltr559.get_proximity()
 
             # If the proximity crosses the threshold, toggle the mode
