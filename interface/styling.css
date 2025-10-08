@@ -204,6 +204,7 @@ main {
     padding: 8px 15px;
     border-radius: 12px;
     cursor: pointer;
+    width: 250px;
     transition: all 0.2s ease;
 }
 
@@ -400,11 +401,13 @@ main {
     text-align: right;
     font-weight: bold;
     padding-right: 1rem;
+
 }
 
 .readings-table td.status {
     text-align: center;
-    font-weight: bold;
+    /*font-weight: bold;*/
+
 }
 
 .readings-list {
@@ -414,6 +417,12 @@ main {
 }
 
 
+.filter-bar {
+    margin: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
 
 /* Thumbnails */
 .sidebar img {
@@ -423,7 +432,6 @@ main {
     cursor: pointer;
     transition: transform 0.2s ease;
 }
-
 
 .sidebar img:hover {
     transform: scale(1.05);
@@ -502,6 +510,7 @@ main {
 }
 
 /* Colors by type */
+.log-entry.target .log-type { color: #ff4444;}
 .log-entry.info .log-type { color: #00bfff; }
 .log-entry.data .log-type { color: #32cd32; }
 .log-entry.nav .log-type { color: #ffa500; }
@@ -523,8 +532,8 @@ main {
     }
 
     .enviro-card-mobile {
-        display: flex;
-        flex: 2;
+        display: block;
+        flex: 1;
         padding: 15px;
         font-size: 12px;
     }

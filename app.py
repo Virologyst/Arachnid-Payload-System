@@ -42,7 +42,7 @@ Device.pin_factory = LGPIOFactory()
 # import curses
 # from time import sleep
 
-# ──────────────── Drilling Mechanism (Nicky)────────────────
+# ──────────────── Drilling Mechanism (Nicky ────────────────
 
 # detections = target_system.get_gauge_pressure()
 # Note to Nicky - pressure plate detection target_system.get_gauge_pressure() - Lower limit 2 Bar. Needs low pass filter
@@ -51,9 +51,9 @@ Device.pin_factory = LGPIOFactory()
 
 time.sleep(1)
 
-# Initialize Servo (GPIO pin 18)
+# Initialize Servo (GPIO pin 13)
 servo = AngularServo(
-    18,
+    13,
     min_angle=0,
     max_angle=360,
     min_pulse_width=0.0005,
@@ -295,18 +295,8 @@ from threading import Thread
 lcd_loop_active = False
 current_mode = "ip"
 
-# def lcd_show_message(text, color=(0, 170, 170)):
-#     """Helper to draw a centered message on the LCD."""
-#     global disp, draw, img, font
-#     draw.rectangle((0, 0, WIDTH, HEIGHT), color)
-#     x1, y1, x2, y2 = font.getbbox(text)
-#     size_x = x2 - x1
-#     size_y = y2 - y1
-#     x = (WIDTH - size_x) / 2
-#     y = (HEIGHT / 2) - (size_y / 2)
-#     draw.text((x, y), text, font=font, fill=(255, 255, 255))
-#     disp.display(img)
-
+frame = target_system.get_image_bytes(encode=False) # <-- gets the taget image frame
+proximity = ltr559.get_proximity #<-- proximity trigger
 
 def lcd_show_message(title, value=None):
     """Render text on the LCD with title + value formatting (stacked lines)."""
@@ -448,44 +438,12 @@ def serve_static_files(path):
     """Serve static files (JS, CSS, images)."""
     return send_from_directory(app.static_folder, path)
 
-# If needed we can switch later
-# @app.route("/detection/switch/<system>", methods=["POST"])
-# def switch_detection_system(system):
-#     """Switch between different detection subsystems (e.g., Dummy, AruCo, Valve)."""
-#     global active_detection_system
-#
-#     # Stop
-#     if active_detection_system:
-#         active_detection_system.stop()
-#
-#     # system ???
-#     system = system.lower()
-#     if system == "dummy":
-#         active_detection_system = TargetDetectionDummy()
-#     # elif system == "aruco":
-#     #     active_detection_system = TargetDetectionAruCo()
-#     # elif system == "valve":
-#     #     active_detection_system = TargetDetectionValve()
-#     else:
-#         return
-#
-#     active_detection_system.start()
-#     return jsonify({"status": "ok", "message": f"Switched to {system} detection system"})
-
 @app.route("/video_feed")
 def video_feed():
     """Stream Target feed from target_detection."""
     return Response(
         gen_frames(),
         mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# @app.route("/live_feed")
-# def video_feed():
-#     """Stream DepthAI feed as MJPEG."""
-#     return Response(
-#         gen_frames(),
-#         mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
 @app.route('/enviro')
 def get_enviro_data():
@@ -502,6 +460,8 @@ def get_enviro_data():
 
         lux = ltr559.get_lux()
         prox = ltr559.get_proximity()
+
+        targets = target_system.get_detections()
 
         # --- Save to DB ---
         conn = get_db_connection()
@@ -521,7 +481,8 @@ def get_enviro_data():
             "reducing": reducing,
             "nh3": nh3,
             "lux": lux,
-            "proximity": prox
+            "proximity": prox,
+            "targets": targets
         })
     except Exception as e:
         app.logger.error(f"Enviro read failed: {e}")
@@ -585,14 +546,11 @@ def status():
 def get_targets():
 
     """Expose latest detections as JSON."""
-    # return jsonify([d.__dict__ for d in dets])
     # ???
     detections = target_system.get_detections()
     print("Targets:", detections)
 
-    frame = target_system.get_image_bytes(encode=False)
-
-    # data = get_guage_pressure()
+    data = target_system.get_gauge_pressure()
 
     dets = [
         {
@@ -607,7 +565,7 @@ def get_targets():
         for det in detections
     ]
 
-    return jsonify({"detections": dets})
+    return jsonify({ "detections": dets, "data": data })
     # return jsonify({})
 
 if __name__ == '__main__':

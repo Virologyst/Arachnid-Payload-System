@@ -6,16 +6,34 @@
     let value = "unknown";
 
 
+    // async function fetchTargets() {
+    //     const res = await fetch("/targets");
+    //     const data = await res.json();
+    //
+    //     console.log('Data from targets: ', data)
+    //
+    // }
+
     async function fetchTargets() {
-        const res = await fetch("/targets");
-        const data = await res.json();
+        try {
+            const res = await fetch("/targets");
+            const data = await res.json();
 
-        console.log('Data from targets: ', data)
-
-        // Example mapping: first 3 detections → A, B, C
-        statusA = data[0]?.type || "unknown";
-        statusB = data[1]?.type || "unknown";
-        statusC = data[2]?.type || "unknown";
+            // Log every key/value or just a summary
+            if (Array.isArray(data)) {
+                data.forEach(target => {
+                    log(`Target detected: ${JSON.stringify(target)}`, 'TARGET');
+                });
+            } else if (typeof data === 'object') {
+                for (const [k, v] of Object.entries(data)) {
+                    log(`${k}: ${v}`, 'TARGET');
+                }
+            } else {
+                log(`Target update: ${data}`, 'TARGET');
+            }
+        } catch (err) {
+            log(`Target fetch error: ${err}`, 'ERROR');
+        }
     }
 
     async function fetchBackendLogs() {
@@ -26,6 +44,7 @@
     let isMobile = false;
 
     function checkMobile() {
+        console.log('isMobile: ', isMobile)
         isMobile = window.innerWidth <= 768;
     }
 
@@ -35,9 +54,38 @@
     function log(message, type = 'INFO') {
         const timestamp = new Date().toLocaleTimeString();
         logs = [{ timestamp, message, type }, ...logs].slice(0, MAX_LOGS);
-        console.log(`[${type}] ${message}`);
+        // console.log(`[${type}] ${message}`);
     }
 
+     // Filters
+    let fromTime = '';
+    let toTime = '';
+
+    $: filteredLogs = logs.filter(l => {
+    if (!fromTime && !toTime) return true;
+
+    const [h, m, s] = l.timestamp.split(':').map(Number);
+    const logDate = new Date();
+    logDate.setHours(h, m, s || 0);
+
+    if (fromTime) {
+      const [fh, fm] = fromTime.split(':').map(Number);
+      const fromDate = new Date();
+      fromDate.setHours(fh, fm, 0);
+      if (logDate < fromDate) return false;
+    }
+
+    if (toTime) {
+      const [th, tm] = toTime.split(':').map(Number);
+      const toDate = new Date();
+      toDate.setHours(th, tm, 59);
+      if (logDate > toDate) return false;
+    }
+
+    return true;
+    });
+
+    // eslint-disable-next-line no-unused-vars
     let historicData = [];
 
     async function fetchHistory() {
@@ -70,11 +118,11 @@
     }
 
     let loading = false;
-    let panelContent = '';
-    let currentView = 'sensors';
+    let currentView = 'logs';
     let enviro = {};
     let mobileMenuOpen = false;
     let lastEnviro = {};
+    let panelContent = '';
 
     async function fetchEnviro() {
         // const res = await fetch('/enviro');
@@ -138,9 +186,10 @@
         log('App initialized', 'INFO');
         fetchHistory();
         setInterval(fetchHistory, 4000);
-        loadPanel('sensors');
         fetchEnviro();
         setInterval(fetchEnviro, 4000);
+        fetchTargets();
+        setInterval(fetchTargets, 4000);
         fetchThumbnails();
         setInterval(fetchThumbnails, 4000); // 4s
         fetchBackendLogs();
@@ -163,6 +212,8 @@
             log(`Drill error: ${e}`, 'ERROR');
         }
     }
+
+
 
 </script>
 
@@ -201,64 +252,54 @@
             <div class="panel-pane">
 
                 <div class="tab-buttons">
-                    <button on:click={() => loadPanel('sensors')}>Graph</button>
+<!--                    <button on:click={() => loadPanel('sensors')}>Graph</button>-->
                     <button on:click={() => loadPanel('logs')}>Logs</button>
-                    <button on:click={() => loadPanel('targets')}>Targets</button>
+<!--                    <button on:click={() => loadPanel('targets')}>Targets</button>-->
                     <button on:click={() => loadPanel('system')}>System</button>
                 </div>
 
                 <div id="dynamicPanel">
                     {#if currentView === 'sensors'}
                         <div class="panel-sensors">
-                            <h2>Sensor Data (Graph Connected to Database)</h2>
-<!--                            <ResponsiveContainer width="100%" height={300}>-->
-<!--                                <AreaChart data={historicData}>-->
-<!--                                    <CartesianGrid strokeDasharray="3 3" />-->
-<!--                                    <XAxis-->
-<!--                                      dataKey="timestamp"-->
-<!--                                      tick={{ fontSize: 10 }}-->
-<!--                                      tickFormatter={(t) => new Date(t).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' })}-->
-<!--                                    />-->
-<!--                                    <YAxis />-->
-<!--                                    <Tooltip />-->
-<!--                                    <Legend />-->
-<!--                                    <Area type="monotone" dataKey="temperature" stroke="#ff7300" fill="#ff7300" fillOpacity={0.3} />-->
-<!--                                    <Area type="monotone" dataKey="humidity" stroke="#00c3ff" fill="#00c3ff" fillOpacity={0.3} />-->
-<!--                                    <Area type="monotone" dataKey="pressure" stroke="#8884d8" fill="#8884d8" fillOpacity={0.2} />-->
-<!--                                </AreaChart>-->
-<!--                            </ResponsiveContainer>-->
+                            <h2>Sensor Panel</h2>
                         </div>
 
                     {:else if currentView === 'logs'}
-                        <div class="logs-panel">
-                            <h2>Live Logs</h2>
-                            <div class="log-feed">
-                                {#each logs as logItem}
-                                    <div class="log-entry {logItem.type.toLowerCase()}">
-                                        <span class="log-time">[{logItem.timestamp}]</span>
-                                        <span class="log-type">[{logItem.type}]</span>
-                                        <span class="log-msg">{logItem.message}</span>
-                                    </div>
-                                {/each}
+
+<!--                        <div class="logs-panel">-->
+<!--                            <h2>Live Logs</h2>-->
+<!--                            <div class="log-feed">-->
+<!--                                {#each logs as logItem}-->
+<!--                                    <div class="log-entry {logItem.type.toLowerCase()}">-->
+<!--                                        <span class="log-time">[{logItem.timestamp}]</span>-->
+<!--                                        <span class="log-type">[{logItem.type}]</span>-->
+<!--                                        <span class="log-msg">{logItem.message}</span>-->
+<!--                                    </div>-->
+<!--                                {/each}-->
+<!--                            </div>-->
+<!--                        </div>-->
+
+                        {#each filteredLogs as logItem}
+                            <div class="log-entry {logItem.type.toLowerCase()}">
+                                <span class="log-time">[{logItem.timestamp}]</span>
+                                <span class="log-type"
+                                      style="color: {logItem.type === 'TARGET' ? 'red' : ''}">
+                                      [{logItem.type}]
+                                </span>
+                                <span class="log-msg">{logItem.message}</span>
                             </div>
+                        {/each}
+
+                        <div class="filter-bar">
+                          <label>From:</label>
+                          <input type="time" bind:value={fromTime}>
+                          <label>To:</label>
+                          <input type="time" bind:value={toTime}>
                         </div>
+
                     {:else if currentView === 'targets'}
                       <div class="targets-panel">
-                        <h2>Active Targets</h2>
-                        <div class="targets-grid">
-                          <div class="target-card">
-                            <h3>A</h3>
-                            <p class="target-status">{statusA}</p>
-                          </div>
-                          <div class="target-card">
-                            <h3>B</h3>
-                            <p class="target-status">{statusB}</p>
-                          </div>
-                          <div class="target-card">
-                            <h3>C</h3>
-                            <p class="target-status">{statusC}</p>
-                          </div>
-                        </div>
+
                       </div>
                     {:else if currentView === 'system'}
                         <div>
@@ -285,50 +326,6 @@
                     {/if}
                 </div>
 
-<!--                <div class="sensor-graph">-->
-<!--                    <h3>Historic Sensor Data</h3>-->
-<!--                    <Line-->
-<!--                        data={{-->
-<!--                            labels: historicData.map(d => new Date(d.timestamp).toLocaleTimeString()),-->
-<!--                            datasets: [-->
-<!--                                {-->
-<!--                                    label: 'Temperature (°C)',-->
-<!--                                    data: historicData.map(d => d.temperature),-->
-<!--                                    borderColor: 'orange',-->
-<!--                                    fill: false-->
-<!--                                },-->
-<!--                                {-->
-<!--                                    label: 'Humidity (%)',-->
-<!--                                    data: historicData.map(d => d.humidity),-->
-<!--                                    borderColor: 'blue',-->
-<!--                                    fill: false-->
-<!--                                },-->
-<!--                                {-->
-<!--                                    label: 'Pressure (hPa)',-->
-<!--                                    data: historicData.map(d => d.pressure),-->
-<!--                                    borderColor: 'purple',-->
-<!--                                    fill: false-->
-<!--                                }-->
-<!--                            ]-->
-<!--                        }}-->
-<!--                        options={{-->
-<!--                            responsive: true,-->
-<!--                            plugins: {-->
-<!--                                legend: { display: true },-->
-<!--                                tooltip: { mode: 'index', intersect: false }-->
-<!--                            },-->
-<!--                            scales: {-->
-<!--                                x: {-->
-<!--                                    title: { display: true, text: 'Timestamp' }-->
-<!--                                },-->
-<!--                                y: {-->
-<!--                                    beginAtZero: false-->
-<!--                                }-->
-<!--                            }-->
-<!--                        }}-->
-<!--                    />-->
-<!--                </div>-->
-
                 <div class="enviro-card">
                     <h2>Enviro+ Live Data</h2>
                         <ul class="readings-list">
@@ -349,21 +346,19 @@
         {#if isMobile}
 
             <div class="bottom-row">
+
                 <div class="readings-table">
                     <table border="1" cellpadding="5">
                         <thead>
-                            <tr><th>Targets</th><th>Current Status</th></tr>
+                            <tr><th>Target</th><td class="status">Gauge:</td></tr>
+                            <tr><th>Status</th><td class="status">{status}</td></tr>
+                            <tr><th>Value</th><td class="status">{value}</td></tr>
                         </thead>
-                        <tbody>
-                            <tr><td class="label">A:</td><td class="status">{statusA}</td></tr>
-                            <tr><td class="label">B:</td><td class="status">{statusB}</td></tr>
-                            <tr><td class="label">C:</td><td class="status">{statusC}</td></tr>
-                        </tbody>
                     </table>
                 </div>
 
                 <div class="enviro-card-mobile">
-    <!--              <h3>Enviro+ Data</h3>-->
+<!--                  <h3>Enviro+ Data</h3>-->
                       <ul class="readings-list">
                         <li>🌡 Temperature: {enviro.temperature} °C</li>
                         <li>💧 Humidity: {enviro.humidity} %</li>
@@ -394,12 +389,10 @@
                     <div class="readings-table">
                         <table border="1" cellpadding="5">
                             <thead>
-                                <tr><th>Target</th><th>Current Status</th><th>Value</th></tr>
+                                <tr><th>Target</th><th>Status</th><th>Reading</th></tr>
                             </thead>
                             <tbody>
                                 <tr><td class="label">Gauge:</td><td class="status">{status}</td><td class="status">{value}</td></tr>
-<!--                                <tr><td class="label">B:</td><td class="status">{statusB}</td></tr>-->
-<!--                                <tr><td class="label">C:</td><td class="status">{statusC}</td></tr>-->
                             </tbody>
                         </table>
                     </div>
