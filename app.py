@@ -133,7 +133,7 @@ try:
     x = (WIDTH - size_x) / 2
     y = (HEIGHT / 2) - (size_y / 2)
 
-    # rite text.
+    # write text.
     draw.rectangle((0, 0, 160, 80), back_colour)
     draw.text((x, y), message, font=font, fill=text_colour)
     disp.display(img)
@@ -240,62 +240,16 @@ def gen_frames():
 
             yield frame_bytes
 
-# def gen_frames():
-#     """Generate MJPEG frames from DepthAI."""
-#     if qRgb is None:
-#         while True:
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + b'' + b'\r\n')
-#     else:
-#         while True:
-#             inRgb = qRgb.get()
-#             frame = inRgb.getCvFrame()
-#             ret, buffer = cv2.imencode('.jpg', frame)
-#             if not ret:
-#                 continue
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
 # ──────────────── DEPTHAI CAMERA ────────────────
 
 if not os.path.exists(IMAGE_DIR):
     os.makedirs(IMAGE_DIR)
 
-# pipeline = dai.Pipeline()
-#
-# camRgb = pipeline.create(dai.node.ColorCamera)
-# camRgb.setBoardSocket(dai.CameraBoardSocket.CAM_A)
-# camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-# camRgb.setInterleaved(False)
-#
-# xoutRgb = pipeline.create(dai.node.XLinkOut)
-# xoutRgb.setStreamName("rgb")
-# camRgb.video.link(xoutRgb.input)
-
-# def init_depthai():
-#     for i in range(10):
-#         try:
-#             device = dai.Device(pipeline)
-#             print("Camera initialized.")
-#             return device, device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
-#         except RuntimeError as e:
-#             print(f"DepthAI init failed (attempt {i+1}): {e}")
-#             time.sleep(5)
-#     print("Camera failed after retries. Running without camera.")
-#     return None, None
-#
-# device, qRgb = init_depthai()
-
 @app.route("/capture", methods=["POST"])
 def capture_image():
     """Capture a single frame from DepthAI and save it."""
     try:
-
-        # if qRgb is None:
-        #     return jsonify({"status": "error", "message": "Camera not initialized"}), 500
-        #
-        # inRgb = qRgb.get()
-        # frame = inRgb.getCvFrame()
 
         frame = target_system.get_image_bytes(encode=False)
 
@@ -334,20 +288,6 @@ def delete_image(filename):
     except FileNotFoundError:
         return jsonify({"status": "error", "message": "File not found"}), 404
 
-# def init_depthai():
-#     for i in range(10):
-#         try:
-#             device = dai.Device(pipeline)
-#             print("Camera initialized.")
-#             return device, device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
-#         except RuntimeError as e:
-#             print(f"DepthAI init failed (attempt {i+1}): {e}")
-#             time.sleep(5)
-#     print("Camera failed after retries. Running without camera.")
-#     return None, None
-
-
-
 # ──────────────── LCD CONTROL ROUTES (Charlie)  ────────────────
 
 from threading import Thread
@@ -366,6 +306,7 @@ current_mode = "ip"
 #     y = (HEIGHT / 2) - (size_y / 2)
 #     draw.text((x, y), text, font=font, fill=(255, 255, 255))
 #     disp.display(img)
+
 
 def lcd_show_message(title, value=None):
     """Render text on the LCD with title + value formatting (stacked lines)."""
@@ -649,7 +590,9 @@ def get_targets():
     detections = target_system.get_detections()
     print("Targets:", detections)
 
-    data = get_guage_pressure()
+    frame = target_system.get_image_bytes(encode=False)
+
+    # data = get_guage_pressure()
 
     dets = [
         {
