@@ -45,13 +45,13 @@
     let logs = [];
     const MAX_LOGS = 1000;
 
-    // function log(message, type = 'INFO') {
+    // function log(message, type = 'SYSTEM') {
     //     const timestamp = new Date().toLocaleTimeString();
     //     logs = [{ timestamp, message, type }, ...logs].slice(0, MAX_LOGS);
     //     // console.log(`[${type}] ${message}`);
     // }
 
-    function log(message, type = 'INFO') {
+    function log(message, type = 'SYSTEM') {
         const timestamp = new Date().toLocaleTimeString();
         const entry = { timestamp, message, type };
 
@@ -180,7 +180,7 @@
         await fetch('/update', { method: 'POST' });
         setTimeout(() => {
             loading = false;
-            log('Device restarted successfully', 'INFO');
+            log('Device restarted successfully', 'SYSTEM');
             window.location.reload();
         }, 5000);
     }
@@ -193,7 +193,7 @@
 
     onMount(() => {
 
-        log('App initialized', 'INFO');
+        log('App initialized', 'SYSTEM');
         fetchBackendLogs();
         fetchHistory();
         setInterval(fetchHistory, 4000);

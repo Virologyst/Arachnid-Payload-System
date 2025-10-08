@@ -512,6 +512,7 @@ main {
 /* Colors by type */
 .log-entry.target .log-type { color: #ff4444;}
 .log-entry.info .log-type { color: #00bfff; }
+.log-entry.system .log-type { color: #00bfff; }
 .log-entry.data .log-type { color: #32cd32; }
 .log-entry.nav .log-type { color: #ffa500; }
 .log-entry.ui .log-type { color: #ff69b4; }
