@@ -438,15 +438,18 @@ def lcd_loop_thread():
 
             # One mode for each variable
             if mode == 0:
+                print("ip")
                 # show ip-address
                 lcd_show_message(ip)
 
             if mode == 1:
+                print("target-detections")
                 # variable = "target-detections"
                 detection = target_system.get_image_bytes(encode=False)
                 disp.display(detection)
 
             if mode == 2:
+                print("temperature")
                 # variable = "temperature"
                 unit = "°C"
                 cpu_temp = get_cpu_temperature()
