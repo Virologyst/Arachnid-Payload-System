@@ -461,6 +461,8 @@ def get_enviro_data():
         lux = ltr559.get_lux()
         prox = ltr559.get_proximity()
 
+        targets = target_system.get_detections()
+
         # --- Save to DB ---
         conn = get_db_connection()
         conn.execute(
@@ -479,7 +481,8 @@ def get_enviro_data():
             "reducing": reducing,
             "nh3": nh3,
             "lux": lux,
-            "proximity": prox
+            "proximity": prox,
+            "targets": targets
         })
     except Exception as e:
         app.logger.error(f"Enviro read failed: {e}")
@@ -546,8 +549,6 @@ def get_targets():
     # ???
     detections = target_system.get_detections()
     print("Targets:", detections)
-
-
 
     data = target_system.get_gauge_pressure()
 
