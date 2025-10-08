@@ -433,37 +433,29 @@ def drill_endpoint():
 
 @app.route("/logs", methods=["GET", "POST"])
 def logs_endpoint():
-    """GET returns backend logs; POST appends a new one from the frontend."""
+    """GET returns backend logs; POST appends frontend entries and stores them."""
     if request.method == "GET":
         logs_list = []
         for entry in list(LOG_BUFFER):
-            try:
-                timestamp, rest = entry.split(" [", 1)
-                log_type, message = rest.split("] ", 1)
-                logs_list.append({
-                    "timestamp": timestamp.strip(),
-                    "type": log_type.strip(),
-                    "message": message.strip()
-                })
-            except Exception:
-                logs_list.append({
-                    "timestamp": "",
-                    "type": "INFO",
-                    "message": entry
-                })
+            # Try to match
+            import re
+            match = re.match(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),?\d*\s+\[(\w+)\]\s+(.*)", entry)
+            if match:
+                ts, lvl, msg = match.groups()
+                logs_list.append({"timestamp": ts, "type": lvl, "message": msg})
+            else:
+                logs_list.append({"timestamp": "", "type": "INFO", "message": entry})
         return jsonify(logs_list)
 
+    # Handle POST
     elif request.method == "POST":
-        data = None
-        try:
-            data = request.get_json(force=True)
-            msg = data.get("message", "")
-            lvl = data.get("type", "INFO").upper()
-            app.logger.info(f"[{lvl}] {msg}")
-            return jsonify({"status": "ok"})
-        except Exception as e:
-            app.logger.error(f"Failed to append log: {e} | data={data}")
-            return jsonify({"status": "error", "message": str(e)}), 500
+        data = request.get_json(force=True)
+        msg = data.get("message", "")
+        lvl = data.get("type", "INFO").upper()
+
+        # Write
+        app.logger.info(f"[{lvl}] {msg}")
+        return jsonify({"status": "ok"})
 
 @app.route("/")
 def serve_index():
