@@ -148,6 +148,8 @@ except Exception as e:
 app = Flask(__name__, static_folder="static", static_url_path="")
 
 # ───── Logging Setup ─────
+from collections import deque
+import logging
 
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -155,7 +157,7 @@ LOG_FILE = os.path.join(LOG_DIR, "egh455.log")
 
 LOG_BUFFER = deque(maxlen=1000)
 
-# Load existing logs from file at startup
+# Load existing logs from main log file on start
 if os.path.exists(LOG_FILE):
     with open(LOG_FILE, "r") as f:
         lines = f.readlines()[-1000:]  # only keep latest 1000 lines
@@ -166,21 +168,25 @@ class FrontendBufferHandler(logging.Handler):
     def emit(self, record):
         LOG_BUFFER.append(self.format(record))
 
-# Standard formatter
+# St format
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 
 # File handler (persistent logs)
-file_handler = logging.FileHandler(LOG_FILE)
+# file_handler = logging.FileHandler(LOG_FILE)
+file_handler = logging.FileHandler(LOG_FILE, mode='a')
 file_handler.setFormatter(formatter)
-
-# Frontend handler (for /logs endpoint)
 buffer_handler = FrontendBufferHandler()
 buffer_handler.setFormatter(formatter)
 
-# Attach both
+# Attach
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
 app.logger.addHandler(file_handler)
 app.logger.addHandler(buffer_handler)
 app.logger.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
+app.logger.addHandler(buffer_handler)
+app.logger.propagate = False
+
 
 # ──────────────── DATABASE SETUP ────────────────
 DB_PATH = 'database/egh455.db'
@@ -433,29 +439,55 @@ def drill_endpoint():
 
 @app.route("/logs", methods=["GET", "POST"])
 def logs_endpoint():
-    """GET returns backend logs; POST appends frontend entries and stores them."""
+    """GET returns combined backend logs (file + memory). POST appends new frontend entries."""
+    import re
+
     if request.method == "GET":
         logs_list = []
+
+        # Load logs
+        try:
+            with open(LOG_FILE, "r") as f:
+                lines = f.readlines()[-10000:]  # 0000 lines
+                for entry in lines:
+                    match = re.match(r"(\d{2}:\d{2}:\d{2}),?\d*\s+\[(\w+)\]\s+(.*)", entry)
+                    if match:
+                        ts, lvl, msg = match.groups()
+                        logs_list.append({"timestamp": ts, "type": lvl, "message": msg.strip()})
+                    else:
+                        logs_list.append({"timestamp": "", "type": "SYSTEM", "message": entry.strip()})
+        except FileNotFoundError:
+            pass
+
+        # Merge memory buffer
         for entry in list(LOG_BUFFER):
-            # Try to match
-            import re
             match = re.match(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),?\d*\s+\[(\w+)\]\s+(.*)", entry)
             if match:
                 ts, lvl, msg = match.groups()
-                logs_list.append({"timestamp": ts, "type": lvl, "message": msg})
+                logs_list.append({"timestamp": ts, "type": lvl, "message": msg.strip()})
             else:
-                logs_list.append({"timestamp": "", "type": "INFO", "message": entry})
+                logs_list.append({"timestamp": "", "type": "SYSTEM", "message": entry.strip()})
+
+        # Return newest
+        logs_list = logs_list[-10000:]
+        logs_list.reverse()
         return jsonify(logs_list)
 
     # Handle POST
-    elif request.method == "POST":
-        data = request.get_json(force=True)
-        msg = data.get("message", "")
-        lvl = data.get("type", "INFO").upper()
+    data = request.get_json(force=True)
+    msg = data.get("message", "")
+    lvl = data.get("type", "SYSTEM").upper()
 
-        # Write
-        app.logger.info(f"[{lvl}] {msg}")
-        return jsonify({"status": "ok"})
+    log_line = f"{datetime.datetime.now():%H:%M:%S} [{lvl}] {msg}"
+    with open(LOG_FILE, "a") as f:
+        f.write(log_line + "\n")
+    LOG_BUFFER.append(log_line)
+
+    # Force flush so it appears immediately
+    for handler in app.logger.handlers:
+        handler.flush()
+
+    return jsonify({"status": "ok"})
 
 @app.route("/")
 def serve_index():
