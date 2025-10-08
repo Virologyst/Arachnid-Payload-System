@@ -292,8 +292,6 @@
                             </div>
                         </div>
 
-
-
                         <div class="filter-bar">
                           <label>From:</label>
                           <input type="time" bind:value={fromTime}>
