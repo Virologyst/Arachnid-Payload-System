@@ -66,26 +66,29 @@ target_system.start()
 time.sleep(1)
 
 # Initialize Servo (GPIO pin 13)
-#servo = AngularServo(
-#    13,
-#    min_angle=0,
-#    max_angle=360,
-#    min_pulse_width=0.0005,
-#    max_pulse_width=0.0025
-#)
+servo = AngularServo(
+    13,
+    min_angle=0, max_angle=360,
+    min_pulse_width=0.001, max_pulse_width=0.002,
+    initial_angle=None      # <- do nothing on construction
+)
+
+def drill_sequence():
+    try:
+        print("Starting drill sequence...")
+        servo.value = +1.0     # full speed
+        time.sleep(5)
+        servo.value = -1.0     # reverse (if desired)
+        time.sleep(5)
+        servo.value = 0.0      # stop (still holding)
+        time.sleep(0.5)
+    finally:
+        servo.detach()         # ensure it really stops on exit/errors
+        print("Drill sequence completed.")
 
 def drill_loop_thread():
     """ Thread for drill that constantly averages pressure guage readings
         Commences drilling once pressure guage is under threshold (2 bar)"""
-    
-    def Drill():
-        print("Starting drill sequence...")
-        servo.angle = 360
-        time.sleep(93)  # 93 which is almost 1.5 minutes
-        servo.angle = 0
-        time.sleep(93)
-        servo.angle = 90
-        print("Drill sequence completed.")
 
     # Parameters
     MOVING_AVG_WINDOW = 10
@@ -113,7 +116,7 @@ def drill_loop_thread():
         # Check threshold condition
         if len(pressure_window) == MOVING_AVG_WINDOW and avg_pressure < PRESSURE_THRESHOLD:
             print("✅ Pressure below threshold — commence drilling!")
-            Drill()
+            drill_sequence()
         else:
             print("⏳ Waiting for pressure to drop...")
 
@@ -512,7 +515,7 @@ Thread(target=lcd_loop_thread, daemon=True).start()
 @app.route('/drill', methods=['POST'])
 def drill_endpoint():
     try:
-        Drill()
+        drill_sequence()
         return jsonify({"status": "success", "message": "Drill activated"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
