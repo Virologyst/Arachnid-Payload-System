@@ -10,6 +10,8 @@ import socket
 import smbus2
 import sys
 import cv2
+from threading import Thread
+from collections import deque
 
 # ───── Third-Party ─────
 import cv2
@@ -21,6 +23,9 @@ from flask import (
     send_from_directory, render_template_string,
     send_file, request
 )
+
+from target_detection.interface import TargetDetectionDummy
+from target_detection.inference import TargetDetection
 
 # --- Enviro+ sensors ---
 from smbus2 import SMBus
@@ -47,13 +52,17 @@ sys.stdout.reconfigure(line_buffering=True)
 # import curses
 # from time import sleep
 
+# Initialize detection system
+target_system = TargetDetection()
+
+print("Initialized target system", flush=True)
+
+target_system.start()
+
 # ──────────────── Drilling Mechanism (Nicky) ────────────────
 
 # detections = target_system.get_gauge_pressure()
 # Note to Nicky - pressure plate detection target_system.get_gauge_pressure() - Lower limit 2 Bar. Needs low pass filter
-# Initialise Servo
-# servo = AngularServo(12, min_angle=0, max_angle=360, min_pulse_width=0.0005, max_pulse_width=0.0025)
-
 time.sleep(1)
 
 # Initialize Servo (GPIO pin 13)
@@ -65,15 +74,53 @@ servo = AngularServo(
     max_pulse_width=0.0025
 )
 
-def Drill():
-    print("Starting drill sequence...")
-    servo.angle = 360
-    time.sleep(93)  # 93 which is almost 1.5 minutes
-    servo.angle = 0
-    time.sleep(93)
-    servo.angle = 90
-    print("Drill sequence completed.")
+def drill_loop_thread():
+    """ Thread for drill that constantly averages pressure guage readings
+        Commences drilling once pressure guage is under threshold (2 bar)"""
+    
+    def Drill():
+        print("Starting drill sequence...")
+        servo.angle = 360
+        time.sleep(93)  # 93 which is almost 1.5 minutes
+        servo.angle = 0
+        time.sleep(93)
+        servo.angle = 90
+        print("Drill sequence completed.")
 
+    # Parameters
+    MOVING_AVG_WINDOW = 10
+    PRESSURE_THRESHOLD = 2
+    READ_DELAY = 0.1
+
+    pressure_window = deque(maxlen=MOVING_AVG_WINDOW)
+
+    while True:
+        # Read pressure gauge
+        pressure = target_system.get_gauge_pressure()
+        if pressure is None:
+            print("No Pressure Reading")
+            time.sleep(READ_DELAY)
+            continue
+        
+        # Store in rolling window
+        pressure_window.append(pressure)
+
+        # Compute moving average
+        avg_pressure = sum(pressure_window) / len(pressure_window)
+
+        print(f"Pressure: {pressure:.2f} bar | Avg: {avg_pressure:.2f} bar")
+
+        # Check threshold condition
+        if len(pressure_window) == MOVING_AVG_WINDOW and avg_pressure < PRESSURE_THRESHOLD:
+            print("✅ Pressure below threshold — commence drilling!")
+            Drill()
+        else:
+            print("⏳ Waiting for pressure to drop...")
+
+        time.sleep(READ_DELAY)
+
+# Start Drill Thread
+Thread(target=drill_loop_thread, daemon=True).start()
 
 # ──────────────── Get IP ────────────────
 def get_ip():
@@ -205,17 +252,6 @@ def init_db():
     conn.close()
 
 # ──────────────── TARGET DETECTION INTEGRATION (Oliver) ────────────────
-
-from target_detection.interface import TargetDetectionDummy
-from target_detection.inference import TargetDetection
-
-# Initialize detection system
-target_system = TargetDetection()
-
-print("Initialized target system", flush=True)
-
-target_system.start()
-
 def gen_frames():
     """Generate MJPEG frames using the active detection system."""
     global target_system
@@ -275,8 +311,6 @@ def delete_image(filename):
         return jsonify({"status": "error", "message": "File not found"}), 404
 
 # ──────────────── LCD CONTROL ROUTES (Charlie)  ────────────────
-
-from threading import Thread
 mode = 0        # 0 = ip-address, 1 = target-detection, 2 = temperature
 
 lcd_loop_active = True
