@@ -300,7 +300,7 @@ def lcd_off():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
+# NEED TO FIX FRONT END MODE SWITCHING HERE
 @app.route("/lcd/show/<mode>", methods=["POST"])
 def lcd_show(mode):
     """Show a specific display mode (ip, temperature, humidity, pressure)."""
@@ -383,7 +383,6 @@ def lcd_loop_thread():
                 "temperature"]
 
     values = {}
-
     for v in variables:
         values[v] = [1] * WIDTH
 
@@ -398,9 +397,8 @@ def lcd_loop_thread():
                 mode %= len(variables)
                 last_page = time.time()
 
-            # One mode for each variable
+            # ========== MODE 0: IP ==========
             if mode == 0:
-                # variable = "ip-address"
                 ip = get_ip()
 
                 WIDTH, HEIGHT = disp.width, disp.height
@@ -424,11 +422,16 @@ def lcd_loop_thread():
                 draw.text(((WIDTH - vw) / 2, (HEIGHT / 2)), ip, font=value_font, fill=text_colour)
 
                 disp.display(img)
-                
-            if mode == 1:
-                # variable = "target-detection"
-                print("ADD TARGET DETECTION HERE")
 
+            # ========== MODE 1: TARGET DETECTION IMAGE ==========
+            elif mode == 1:
+                path = "test_image.jpg"
+                det_img = Image.open(path)
+                det_img = det_img.resize((WIDTH, HEIGHT))  # fit to LCD
+                det_img = det_img.convert("RGB")
+                disp.display(det_img)
+
+            # ========== MODE 2: TEMPERATURE ==========
             if mode == 2:
                 # variable = "temperature"
                 unit = "°C"
