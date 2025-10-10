@@ -66,13 +66,13 @@ target_system.start()
 time.sleep(1)
 
 # Initialize Servo (GPIO pin 13)
-servo = AngularServo(
-    13,
-    min_angle=0,
-    max_angle=360,
-    min_pulse_width=0.0005,
-    max_pulse_width=0.0025
-)
+#servo = AngularServo(
+#    13,
+#    min_angle=0,
+#    max_angle=360,
+#    min_pulse_width=0.0005,
+#    max_pulse_width=0.0025
+#)
 
 def drill_loop_thread():
     """ Thread for drill that constantly averages pressure guage readings
@@ -360,7 +360,7 @@ def lcd_loop_thread():
 
     # Get the temperature of the CPU for compensation
     def get_cpu_temperature():
-        process = Popen(["vcgencmd", "measure_temp"], stdout=PIPE, universal_newlines=True)
+        process = Popen(["/usr/bin/vcgencmd", "measure_temp"], stdout=PIPE, universal_newlines=True)
         output, _error = process.communicate()
         return float(output[output.index("=") + 1:output.rindex("'")])
 
