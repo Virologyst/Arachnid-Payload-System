@@ -316,7 +316,8 @@
                                 <button class="update-btn" on:click={() => fetch('/lcd/on', {method: 'POST'})}>Turn on LCD</button>
                                 <button class="update-btn" on:click={() => fetch('/lcd/off', {method: 'POST'})}>Turn off LCD</button>
                                 <button class="update-btn" on:click={() => fetch('/lcd/show/ip', {method: 'POST'})}>Show IP Address</button>
-                                <button class="update-btn" on:click={() => fetch('/lcd/loop', {method: 'POST'})}>Show Sensor Data</button>
+                                <button class="update-btn" on:click={() => fetch('/lcd/show/liveDetections', {method: 'POST'})}>Show Live Detections</button>
+                                <button class="update-btn" on:click={() => fetch('/lcd/show/temperature', {method: 'POST'})}>Show Temperature</button>
                             </div>
 
                             {#if loading}

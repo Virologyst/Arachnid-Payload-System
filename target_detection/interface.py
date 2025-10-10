@@ -61,7 +61,7 @@ _PALETTE = np.array([
 def _color(cid: int):
     return _PALETTE[cid % len(_PALETTE)].tolist()
 
-CLASS_CONFIDENCES = {'AruCo': 0.7, 'fire_extinguisher': 0.7, 'needle_centre': 0.50, 'needle_tip': 0.3, 'valve_closed': 0.80, 'valve_open': 0.80}
+CLASS_CONFIDENCES = {'AruCo': 0.7, 'fire_extinguisher': 0.7, 'needle_centre': 0.01, 'needle_tip': 0.01, 'valve_closed': 0.80, 'valve_open': 0.80}
 LABELS = list(CLASS_CONFIDENCES.keys())
 ARUCO_MARKER_SIDE_LENGTH = 0.25 #Side length in meters
 
@@ -69,35 +69,44 @@ def get_aruco_markers(frame: np.ndarray, detector,
                        camera_matrix, distance_matrix) -> list[Detection]:
     grey = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
     corners, ids, _ = detector.detectMarkers(grey)
-    print(f"AruCo markers: {ids}")
     if ids is None:
         return []
     
-    obj_points, img_points = cv2.aruco.Board.matchImagePoints(corners, ids)
+    marker_size = 0.1
+    obj_points = np.array([
+        [-marker_size / 2, -marker_size / 2, 0],  
+        [ marker_size / 2, -marker_size / 2, 0], 
+        [ marker_size / 2,  marker_size / 2, 0], 
+        [-marker_size / 2,  marker_size / 2, 0],
+    ], dtype=np.float32)
 
-    _, rot_vecs, trans_vecs = cv2.aruco.Board.matchImagePoints(
-        obj_points,
-        img_points,
-        camera_matrix,
-        distance_matrix)
-    aruco_dets = [
-        Detection(
-            type=DetectionType.AruCo,
-            confidence=1.0,
-            x=corners[idx][0][0],
-            y=corners[idx][0][1],
-            width=corners[idx][2][0] - corners[idx][0][0],
-            height=corners[idx][2][1] - corners[idx][0][1],
-            angle = None,
-            location = Point3D(
-                x=trans_vecs[idx][0],
-                y=trans_vecs[idx][1],
-                z=trans_vecs[idx][2]
-            ),
-            id=ids[idx]
+    aruco_dets = []
+    for idx, corner in enumerate(corners):
+        img_points = corner
+
+        _, rot_vecs, trans_vec = cv2.solvePnP(
+            obj_points,
+            img_points,
+            camera_matrix,
+            distance_matrix)
+
+        aruco_dets.append(
+            Detection(
+                type=DetectionType.AruCo,
+                confidence=1.0,
+                x=corner[0][0][0],
+                y=corner[0][0][1],
+                width=corner[0][2][0] - corner[0][0][0],
+                height=corner[0][2][1] - corner[0][0][1],
+                angle = None,
+                location = Point3D(
+                    x=trans_vec[0],
+                    y=trans_vec[1],
+                    z=trans_vec[2]
+                ),
+                id=ids[idx]
+            )
         )
-        for idx in len(corners)
-    ]
     
 
     return aruco_dets
@@ -192,6 +201,7 @@ class TargetDetectionInterface:
     def get_image_bytes(self, draw_detections_flag: bool = True, encode=True) -> bytes | None:  # cv2.imencode output
         with self._lock:
             frame = self._latest_image
+            print(self._latest_detections)
             aruco_dets = get_aruco_markers(frame, self.detector, self.mtx, self.dst)
             dets = []
             dets.extend(self._latest_detections)
