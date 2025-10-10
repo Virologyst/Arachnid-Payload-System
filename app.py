@@ -8,6 +8,7 @@ import subprocess
 import random
 import socket
 import smbus2
+import sys
 
 # ───── Third-Party ─────
 import cv2
@@ -25,6 +26,8 @@ from smbus2 import SMBus
 from enviroplus import gas
 from bme280 import BME280
 from ltr559 import LTR559
+from subprocess import PIPE, Popen
+import colorsys
 
 # --- Enviro LCD  ---
 from fonts.ttf import RobotoMedium as UserFont
@@ -38,6 +41,7 @@ from gpiozero import Device
 from gpiozero.pins.lgpio import LGPIOFactory
 
 Device.pin_factory = LGPIOFactory()
+sys.stdout.reconfigure(line_buffering=True)
 
 # import curses
 # from time import sleep
@@ -83,8 +87,34 @@ def get_ip():
         s.close()
     return ip
 
-ip = get_ip()
-# print("Detected IP:", ip)
+# ──────────────── ENVIRO+ SENSORS AND LCD ────────────────
+
+time.sleep(1.0)  # Give it a sec
+
+# Initialise sensors (Same as examples)
+bme280 = BME280()
+ltr559 = LTR559()
+gas_sensor = gas
+
+try:
+
+    disp = st7735.ST7735(
+        port=0,
+        cs=1,
+        dc="GPIO9",
+        backlight="GPIO12",
+        rotation=270,
+        spi_speed_hz=10000000
+    )
+
+    # Initialize display.
+    disp.begin()
+
+    print("Enviro+ and LCD initialised correctly.")
+
+except Exception as e:
+    print("LCD init failed:", e)
+    disp = None
 
 # ───── App Setup ─────
 app = Flask(__name__, static_folder="static", static_url_path="")
@@ -175,124 +205,87 @@ def init_db():
 
 # ──────────────── TARGET DETECTION INTEGRATION (Oliver) ────────────────
 
-from target_detection.interface import TargetDetectionDummy
-from target_detection.inference import TargetDetection
+# from target_detection.interface import TargetDetectionDummy
+# from target_detection.inference import TargetDetection
 
-# Initialize detection system
-target_system = TargetDetection()
+# # Initialize detection system
+# target_system = TargetDetection()
 
-print("Initialized target system", flush=True)
+# print("Initialized target system", flush=True)
 
-target_system.start()
+# target_system.start()
 
-def gen_frames():
-    """Generate MJPEG frames using the active detection system."""
-    global target_system
-    while True:
-        target_system.wait_for_new_image(timeout=1.0)
-        frame_bytes = target_system.get_image_bytes()
-        if frame_bytes:
+# def gen_frames():
+#     """Generate MJPEG frames using the active detection system."""
+#     global target_system
+#     while True:
+#         target_system.wait_for_new_image(timeout=1.0)
+#         frame_bytes = target_system.get_image_bytes()
+#         if frame_bytes:
 
-            yield frame_bytes
-
-
-# ──────────────── DEPTHAI CAMERA ────────────────
-
-if not os.path.exists(IMAGE_DIR):
-    os.makedirs(IMAGE_DIR)
-
-@app.route("/capture", methods=["POST"])
-def capture_image():
-    """Capture a single frame from DepthAI and save it."""
-    try:
-
-        frame = target_system.get_image_bytes(encode=False)
-
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{IMAGE_DIR}/capture_{timestamp}.jpg"
-
-        cv2.imwrite(filename, frame)
-        return jsonify({"status": "ok", "file": filename})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-@app.route("/images")
-def list_images():
-    """Return JSON list of saved images (latest 10 first)."""
-    files = sorted(
-        [f for f in os.listdir(IMAGE_DIR) if f.endswith(".jpg")],
-        key=lambda x: os.path.getmtime(os.path.join(IMAGE_DIR, x)),
-        reverse=True
-    )
-    latest = files[:10]
-    return jsonify({"images": latest})
+#             yield frame_bytes
 
 
-@app.route("/images/<filename>")
-def get_image(filename):
-    """Serve a specific saved image."""
-    return send_file(os.path.join(IMAGE_DIR, filename), mimetype="image/jpeg")
+# # ──────────────── DEPTHAI CAMERA ────────────────
+
+# if not os.path.exists(IMAGE_DIR):
+#     os.makedirs(IMAGE_DIR)
+
+# @app.route("/capture", methods=["POST"])
+# def capture_image():
+#     """Capture a single frame from DepthAI and save it."""
+#     try:
+
+#         frame = target_system.get_image_bytes(encode=False)
+
+#         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+#         filename = f"{IMAGE_DIR}/capture_{timestamp}.jpg"
+
+#         cv2.imwrite(filename, frame)
+#         return jsonify({"status": "ok", "file": filename})
+#     except Exception as e:
+#         return jsonify({"status": "error", "message": str(e)}), 500
+
+# @app.route("/images")
+# def list_images():
+#     """Return JSON list of saved images (latest 10 first)."""
+#     files = sorted(
+#         [f for f in os.listdir(IMAGE_DIR) if f.endswith(".jpg")],
+#         key=lambda x: os.path.getmtime(os.path.join(IMAGE_DIR, x)),
+#         reverse=True
+#     )
+#     latest = files[:10]
+#     return jsonify({"images": latest})
 
 
-@app.route("/images/delete/<filename>", methods=["DELETE"])
-def delete_image(filename):
-    """Delete an image from the folder."""
-    try:
-        os.remove(os.path.join(IMAGE_DIR, filename))
-        return jsonify({"status": "ok", "message": f"{filename} deleted"})
-    except FileNotFoundError:
-        return jsonify({"status": "error", "message": "File not found"}), 404
+# @app.route("/images/<filename>")
+# def get_image(filename):
+#     """Serve a specific saved image."""
+#     return send_file(os.path.join(IMAGE_DIR, filename), mimetype="image/jpeg")
+
+
+# @app.route("/images/delete/<filename>", methods=["DELETE"])
+# def delete_image(filename):
+#     """Delete an image from the folder."""
+#     try:
+#         os.remove(os.path.join(IMAGE_DIR, filename))
+#         return jsonify({"status": "ok", "message": f"{filename} deleted"})
+#     except FileNotFoundError:
+#         return jsonify({"status": "error", "message": "File not found"}), 404
 
 # ──────────────── LCD CONTROL ROUTES (Charlie)  ────────────────
 
 from threading import Thread
+mode = 0        # 0 = ip-address, 1 = target-detection, 2 = temperature
 
 lcd_loop_active = True
 current_mode = "ip"
-
-print(lcd_loop_active)
-
-
-def lcd_show_message(title, value=None):
-    """Render text on the LCD with title + value formatting (stacked lines)."""
-    global disp, draw, font
-
-    WIDTH, HEIGHT = disp.width, disp.height
-    img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))
-    draw = ImageDraw.Draw(img)
-
-    # Fonts
-    title_font = ImageFont.truetype(UserFont, 16)
-    value_font = ImageFont.truetype(UserFont, 22)
-
-    # Colors
-    text_colour = (255, 255, 255)
-    back_colour = (0, 100, 180)
-
-    # Draw background
-    draw.rectangle((0, 0, WIDTH, HEIGHT), back_colour)
-
-    # If no value provided, just display one centered line
-    if not value:
-        tw, th = title_font.getbbox(title)[2:]
-        draw.text(((WIDTH - tw) / 2, (HEIGHT - th) / 2), title, font=title_font, fill=text_colour)
-    else:
-        # Draw title (top line)
-        tw, th = title_font.getbbox(title)[2:]
-        draw.text(((WIDTH - tw) / 2, 10), title, font=title_font, fill=text_colour)
-
-        # Draw value (bottom line)
-        vw, vh = value_font.getbbox(value)[2:]
-        draw.text(((WIDTH - vw) / 2, (HEIGHT / 2)), value, font=value_font, fill=text_colour)
-
-    disp.display(img)
 
 @app.route("/lcd/on", methods=["POST"])
 def lcd_on():
     """Turn the LCD backlight ON."""
     try:
         disp.set_backlight(True)
-        lcd_show_message(ip)
         return jsonify({"status": "ok", "message": "LCD backlight turned on"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -308,56 +301,79 @@ def lcd_off():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# @app.route("/lcd/show/<mode>", methods=["POST"])
-# def lcd_show(mode):
-#     """Show a specific display mode (ip, temperature, humidity, pressure)."""
-#     global current_mode
-#     try:
-#         current_mode = mode
-#         if mode == "ip":
-#             lcd_show_message(ip)
-#         elif mode == "temperature":
-#             lcd_show_message(f"TEMP: {bme280.get_temperature():.1f}C")
-#         elif mode == "humidity":
-#             lcd_show_message(f"HUM: {bme280.get_humidity():.1f}%")
-#         elif mode == "pressure":
-#             lcd_show_message(f"PRES: {bme280.get_pressure():.1f}hPa")
-#         else:
-#             lcd_show_message(mode.upper())
-#         return jsonify({"status": "ok", "message": f"LCD showing {mode}"})
-#     except Exception as e:
-#         return jsonify({"status": "error", "message": str(e)}), 500
-
-
-@app.route("/lcd/loop", methods=["POST"])
-def lcd_loop_toggle():
-    """Toggle looping between sensor displays."""
-    global lcd_loop_active
-    # lcd_loop_active = not lcd_loop_active
-
-    if lcd_loop_active:
-        Thread(target=lcd_loop_thread, daemon=True).start()
-        return jsonify({"status": "ok", "message": "LCD looping started"})
-    else:
-        return jsonify({"status": "ok", "message": "LCD looping stopped"})
-
+@app.route("/lcd/show/<mode>", methods=["POST"])
+def lcd_show(mode):
+    """Show a specific display mode (ip, temperature, humidity, pressure)."""
+    global current_mode
+    try:
+        current_mode = mode
+        if mode == 0:
+            lcd_show_message(ip)
+        elif mode == 1:
+            lcd_show_message(f"TEMP: {bme280.get_temperature():.1f}C")
+        elif mode == 2:
+            lcd_show_message(f"TEMP: {bme280.get_temperature():.1f}C")
+        else:
+            lcd_show_message(mode.upper())
+        return jsonify({"status": "ok", "message": f"LCD showing {mode}"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 def lcd_loop_thread():
     """Cycle through sensor values automatically."""
-    global lcd_loop_active
+    global mode
 
-    ip = get_ip()
-    frame = target_system.get_image_bytes(encode=False) # <-- gets the taget image frame
-    proximity = ltr559.get_proximity()
+    # Get the temperature of the CPU for compensation
+    def get_cpu_temperature():
+        process = Popen(["vcgencmd", "measure_temp"], stdout=PIPE, universal_newlines=True)
+        output, _error = process.communicate()
+        return float(output[output.index("=") + 1:output.rindex("'")])
 
-    # Tuning factor for compensation. Decrease this number to adjust the
+    # Displays data and text on the 0.96" LCD
+    def display_text(variable, data, unit):
+        # Maintain length of list
+        values[variable] = values[variable][1:] + [data]
+        # Scale the values for the variable between 0 and 1
+        vmin = min(values[variable])
+        vmax = max(values[variable])
+        colours = [(v - vmin + 1) / (vmax - vmin + 1) for v in values[variable]]
+        # Format the variable name and value
+        message = f"{variable[:4]}: {data:.1f} {unit}"
+        logging.info(message)
+        draw.rectangle((0, 0, WIDTH, HEIGHT), (255, 255, 255))
+        for i in range(len(colours)):
+            # Convert the values to colours from red to blue
+            colour = (1.0 - colours[i]) * 0.6
+            r, g, b = [int(x * 255.0) for x in colorsys.hsv_to_rgb(colour, 1.0, 1.0)]
+            # Draw a 1-pixel wide rectangle of colour
+            draw.rectangle((i, top_pos, i + 1, HEIGHT), (r, g, b))
+            # Draw a line graph in black
+            line_y = HEIGHT - (top_pos + (colours[i] * (HEIGHT - top_pos))) + top_pos
+            draw.rectangle((i, line_y, i + 1, line_y + 1), (0, 0, 0))
+        # Write the text at the top in black
+        draw.text((0, 0), message, font=font, fill=(0, 0, 0))
+        disp.display(img)
+
+    WIDTH = disp.width
+    HEIGHT = disp.height
+
+    # Set up canvas and font
+    img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    font_size = 20
+    font = ImageFont.truetype(UserFont, font_size)
+
+    message = ""
+
+    # The position of the top bar
+    top_pos = 25
+
     # temperature down, and increase to adjust up
     factor = 2.25
 
     cpu_temps = [get_cpu_temperature()] * 5
 
     delay = 0.5  # Debounce the proximity tap
-    mode = 0  # The starting mode
     last_page = 0
     light = 1
 
@@ -373,7 +389,9 @@ def lcd_loop_thread():
 
     # The main loop
     try:
-        while lcd_loop_active:
+        while True:
+            proximity = ltr559.get_proximity()
+
             # If the proximity crosses the threshold, toggle the mode
             if proximity > 1500 and time.time() - last_page > delay:
                 mode += 1
@@ -382,18 +400,36 @@ def lcd_loop_thread():
 
             # One mode for each variable
             if mode == 0:
-                print("ip")
-                # show ip-address
-                lcd_show_message(ip)
+                # variable = "ip-address"
+                ip = get_ip()
 
+                WIDTH, HEIGHT = disp.width, disp.height
+                img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))  # clean background
+                draw = ImageDraw.Draw(img)
+
+                title_font = ImageFont.truetype(UserFont, 16)
+                value_font = ImageFont.truetype(UserFont, 22)
+
+                text_colour = (255, 255, 255)
+                back_colour = (0, 100, 180)
+                draw.rectangle((0, 0, WIDTH, HEIGHT), back_colour)
+
+                # Title
+                title = "IP ADDRESS"
+                tw, th = title_font.getbbox(title)[2:]
+                draw.text(((WIDTH - tw) / 2, 5), title, font=title_font, fill=text_colour)
+
+                # IP Address
+                vw, vh = value_font.getbbox(ip)[2:]
+                draw.text(((WIDTH - vw) / 2, (HEIGHT / 2)), ip, font=value_font, fill=text_colour)
+
+                disp.display(img)
+                
             if mode == 1:
-                print("target-detections")
-                # variable = "target-detections"
-                detection = target_system.get_image_bytes(encode=False)
-                disp.display(detection)
+                # variable = "target-detection"
+                print("ADD TARGET DETECTION HERE")
 
             if mode == 2:
-                print("temperature")
                 # variable = "temperature"
                 unit = "°C"
                 cpu_temp = get_cpu_temperature()
@@ -406,6 +442,9 @@ def lcd_loop_thread():
 
     except Exception as e:
         print(f"[LCD LOOP ERROR] {e}")
+
+# Start LCD Thread
+Thread(target=lcd_loop_thread, daemon=True).start()
 
 # ──────────────── ROUTES ────────────────
 
