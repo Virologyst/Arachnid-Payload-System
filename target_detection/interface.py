@@ -69,6 +69,7 @@ def get_aruco_markers(frame: np.ndarray, detector,
                        camera_matrix, distance_matrix) -> list[Detection]:
     grey = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
     corners, ids, _ = detector.detectMarkers(grey)
+    print(f"AruCo markers: {ids}")
     if ids is None:
         return []
     

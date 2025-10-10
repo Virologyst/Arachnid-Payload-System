@@ -90,7 +90,9 @@ class TargetDetection(TargetDetectionInterface):
                 confidence=score if score is not None else 0.0,
                 x=x1, y=y1, width=w, height=h,
                 type=DetectionType(name),
-                angle=None
+                angle=None,
+                location=None,
+                id=None
             )
             dets.append(detection)
         return dets
