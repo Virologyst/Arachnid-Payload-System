@@ -9,6 +9,7 @@ import random
 import socket
 import smbus2
 import sys
+import cv2
 
 # ───── Third-Party ─────
 import cv2
@@ -46,7 +47,7 @@ sys.stdout.reconfigure(line_buffering=True)
 # import curses
 # from time import sleep
 
-# ──────────────── Drilling Mechanism (Nicky ────────────────
+# ──────────────── Drilling Mechanism (Nicky) ────────────────
 
 # detections = target_system.get_gauge_pressure()
 # Note to Nicky - pressure plate detection target_system.get_gauge_pressure() - Lower limit 2 Bar. Needs low pass filter
@@ -205,73 +206,73 @@ def init_db():
 
 # ──────────────── TARGET DETECTION INTEGRATION (Oliver) ────────────────
 
-# from target_detection.interface import TargetDetectionDummy
-# from target_detection.inference import TargetDetection
+from target_detection.interface import TargetDetectionDummy
+from target_detection.inference import TargetDetection
 
-# # Initialize detection system
-# target_system = TargetDetection()
+# Initialize detection system
+target_system = TargetDetection()
 
-# print("Initialized target system", flush=True)
+print("Initialized target system", flush=True)
 
-# target_system.start()
+target_system.start()
 
-# def gen_frames():
-#     """Generate MJPEG frames using the active detection system."""
-#     global target_system
-#     while True:
-#         target_system.wait_for_new_image(timeout=1.0)
-#         frame_bytes = target_system.get_image_bytes()
-#         if frame_bytes:
+def gen_frames():
+    """Generate MJPEG frames using the active detection system."""
+    global target_system
+    while True:
+        target_system.wait_for_new_image(timeout=1.0)
+        frame_bytes = target_system.get_image_bytes()
+        if frame_bytes:
 
-#             yield frame_bytes
+            yield frame_bytes
 
 
 # # ──────────────── DEPTHAI CAMERA ────────────────
 
-# if not os.path.exists(IMAGE_DIR):
-#     os.makedirs(IMAGE_DIR)
+if not os.path.exists(IMAGE_DIR):
+    os.makedirs(IMAGE_DIR)
 
-# @app.route("/capture", methods=["POST"])
-# def capture_image():
-#     """Capture a single frame from DepthAI and save it."""
-#     try:
+@app.route("/capture", methods=["POST"])
+def capture_image():
+    """Capture a single frame from DepthAI and save it."""
+    try:
 
-#         frame = target_system.get_image_bytes(encode=False)
+        frame = target_system.get_image_bytes(encode=False)
 
-#         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-#         filename = f"{IMAGE_DIR}/capture_{timestamp}.jpg"
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{IMAGE_DIR}/capture_{timestamp}.jpg"
 
-#         cv2.imwrite(filename, frame)
-#         return jsonify({"status": "ok", "file": filename})
-#     except Exception as e:
-#         return jsonify({"status": "error", "message": str(e)}), 500
+        cv2.imwrite(filename, frame)
+        return jsonify({"status": "ok", "file": filename})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
-# @app.route("/images")
-# def list_images():
-#     """Return JSON list of saved images (latest 10 first)."""
-#     files = sorted(
-#         [f for f in os.listdir(IMAGE_DIR) if f.endswith(".jpg")],
-#         key=lambda x: os.path.getmtime(os.path.join(IMAGE_DIR, x)),
-#         reverse=True
-#     )
-#     latest = files[:10]
-#     return jsonify({"images": latest})
-
-
-# @app.route("/images/<filename>")
-# def get_image(filename):
-#     """Serve a specific saved image."""
-#     return send_file(os.path.join(IMAGE_DIR, filename), mimetype="image/jpeg")
+@app.route("/images")
+def list_images():
+    """Return JSON list of saved images (latest 10 first)."""
+    files = sorted(
+        [f for f in os.listdir(IMAGE_DIR) if f.endswith(".jpg")],
+        key=lambda x: os.path.getmtime(os.path.join(IMAGE_DIR, x)),
+        reverse=True
+    )
+    latest = files[:10]
+    return jsonify({"images": latest})
 
 
-# @app.route("/images/delete/<filename>", methods=["DELETE"])
-# def delete_image(filename):
-#     """Delete an image from the folder."""
-#     try:
-#         os.remove(os.path.join(IMAGE_DIR, filename))
-#         return jsonify({"status": "ok", "message": f"{filename} deleted"})
-#     except FileNotFoundError:
-#         return jsonify({"status": "error", "message": "File not found"}), 404
+@app.route("/images/<filename>")
+def get_image(filename):
+    """Serve a specific saved image."""
+    return send_file(os.path.join(IMAGE_DIR, filename), mimetype="image/jpeg")
+
+
+@app.route("/images/delete/<filename>", methods=["DELETE"])
+def delete_image(filename):
+    """Delete an image from the folder."""
+    try:
+        os.remove(os.path.join(IMAGE_DIR, filename))
+        return jsonify({"status": "ok", "message": f"{filename} deleted"})
+    except FileNotFoundError:
+        return jsonify({"status": "error", "message": "File not found"}), 404
 
 # ──────────────── LCD CONTROL ROUTES (Charlie)  ────────────────
 
@@ -425,11 +426,22 @@ def lcd_loop_thread():
 
             # ========== MODE 1: TARGET DETECTION IMAGE ==========
             elif mode == 1:
-                path = "test_image.jpg"
-                det_img = Image.open(path)
-                det_img = det_img.resize((WIDTH, HEIGHT))  # fit to LCD
-                det_img = det_img.convert("RGB")
-                disp.display(det_img)
+                # path = "test_image.jpg"
+                # det_img = Image.open(path)
+                detection = target_system.get_image_bytes(encode=False)  # -> np.ndarray (BGR)
+                if detection is None:
+                    print("No frame yet")
+                else:
+                    # Show the camera frame
+                    # detection is np.ndarray in BGR; convert to RGB and resize to LCD
+                    rgb = cv2.cvtColor(detection, cv2.COLOR_BGR2RGB)
+                    frame_img = Image.fromarray(rgb)
+
+                    # Resize to LCD resolution (keeps aspect ratio or fill; choose one)
+                    WIDTH, HEIGHT = disp.width, disp.height
+                    frame_img = frame_img.resize((WIDTH, HEIGHT), Image.BILINEAR)
+
+                    disp.display(frame_img)
 
             # ========== MODE 2: TEMPERATURE ==========
             if mode == 2:
