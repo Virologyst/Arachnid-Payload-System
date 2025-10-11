@@ -42,6 +42,13 @@ class Detection:
                 f"x={self.x}, y={self.y}, w={self.width}, h={self.height}, "
                 f"angle={self.angle})")
 
+def angle_to_bar(angle: float) -> float:
+    pressure_map_slope = (5 - 2) / (90 - 0)
+    pressure_map_intercept = -1
+    result = pressure_map_slope * angle + pressure_map_intercept
+    return result
+
+
 # =========================
 # Colors / UI helpers
 # =========================
@@ -53,7 +60,7 @@ _PALETTE = np.array([
 def _color(cid: int):
     return _PALETTE[cid % len(_PALETTE)].tolist()
 
-CLASS_CONFIDENCES = {'AruCo': 0.7, 'fire_extinguisher': 0.7, 'needle_centre': 0.55, 'needle_tip': 0.3, 'valve_closed': 0.7, 'valve_open': 0.7}
+CLASS_CONFIDENCES = {'AruCo': 0.7, 'fire_extinguisher': 0.7, 'needle_centre': 0.50, 'needle_tip': 0.3, 'valve_closed': 0.6, 'valve_open': 0.6}
 LABELS = list(CLASS_CONFIDENCES.keys())
 ARUCO_MARKER_SIDE_LENGTH = 0.25 #Side length in meters
 
@@ -122,6 +129,9 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
         text = f"{name} {conf:.2f}"
         if det.type == DetectionType.AruCo:
             text = f"{name} {det.id} {det.location}"
+        if det.type == DetectionType.NeedleTip:
+            pressure = angle_to_bar(det.angle)
+            text = f"{name} {conf:.2f} | {pressure} BAR"
 
         (tw, th_text), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         bx = x1; by = max(0, y1 - th_text - 6)
@@ -129,10 +139,15 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
         cv2.putText(frame, text, (bx + 3, by + th_text + 1),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
         
-    #if gauge_detected:
+    if gauge_detected:
         #Draw the triange for the gauge
-    #    needle_centre_centre = 
-    #    needle_tip_centre = 
+        needle_centre = [det for det in dets if det.type == DetectionType.NeedleCenter][0]
+        needle_tip = [det for det in dets if det.type == DetectionType.NeedleTip][0]
+        needle_centre_centre = (needle_centre.x + needle_centre.width // 2, needle_centre.y + needle_centre.height // 2)
+        needle_tip_centre = (needle_tip.x + needle_tip.width // 2, needle_tip.y + needle_tip.height // 2)
+        cid = LABELS.index(needle_tip.type.value)
+        color = _color(cid)
+        cv2.line(frame,  needle_centre_centre, needle_tip_centre, color, 1, cv2.LINE_AA)
 
     return frame
 
@@ -189,15 +204,14 @@ class TargetDetectionInterface:
             return self._latest_detections
 
     def get_gauge_pressure(self) -> Optional[float]:
-        pressure_map_slope = (5 - 2) / (90 - 0)
-        pressure_map_intercept = -1
+        
         with self._lock:
             if self._latest_detections is None:
                 return None
             for det in self._latest_detections:
                 if det.type == DetectionType.NeedleCenter:
                     angle = det.angle
-                    pressure = pressure_map_slope * angle + pressure_map_intercept
+                    pressure = angle_to_bar(angle)
                     return pressure  # approximate BAR pressure
         return None
 
