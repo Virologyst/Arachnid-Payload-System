@@ -35,6 +35,7 @@ class Detection:
     height: int
     angle: Optional[float] # Angle in degrees, only for Gauge type detections
     location: Optional[Point3D]
+    id: Optional[int]
 
     def __repr__(self):
         return (f"Detection(type={self.type}, conf={self.confidence:.2f}, "
@@ -81,7 +82,8 @@ def get_aruco_markers(frame: np.ndarray, detector,
                 x=trans_vecs[idx][0],
                 y=trans_vecs[idx][1],
                 z=trans_vecs[idx][2]
-            )
+            ),
+            id=ids[idx]
         )
         for idx in len(corners)
     ]
@@ -115,7 +117,7 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
         name = det.type.value
         text = f"{name} {conf:.2f}"
         if det.type == DetectionType.AruCo:
-            text += f" {det.location}"
+            text = f"{name} {det.id} {det.location}"
 
         (tw, th_text), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         bx = x1; by = max(0, y1 - th_text - 6)
