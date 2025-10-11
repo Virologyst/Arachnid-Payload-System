@@ -70,7 +70,9 @@ class TargetDetection(TargetDetectionInterface):
         for det in dmsg.detections:
             cls = det.label
             name = self.label_encoding.get(cls, str(cls))
+
             print(name,  det.confidence)
+
             if name in ["fire_extinguisher", "AruCo"]:
                 continue
 
