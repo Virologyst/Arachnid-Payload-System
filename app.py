@@ -8,6 +8,10 @@ import subprocess
 import random
 import socket
 import smbus2
+import sys
+import cv2
+from threading import Thread
+from collections import deque
 
 # ───── Third-Party ─────
 import cv2
@@ -20,11 +24,16 @@ from flask import (
     send_file, request
 )
 
+from target_detection.interface import TargetDetectionDummy
+from target_detection.inference import TargetDetection
+
 # --- Enviro+ sensors ---
 from smbus2 import SMBus
 from enviroplus import gas
 from bme280 import BME280
 from ltr559 import LTR559
+from subprocess import PIPE, Popen
+import colorsys
 
 # --- Enviro LCD  ---
 from fonts.ttf import RobotoMedium as UserFont
@@ -38,17 +47,22 @@ from gpiozero import Device
 from gpiozero.pins.lgpio import LGPIOFactory
 
 Device.pin_factory = LGPIOFactory()
+sys.stdout.reconfigure(line_buffering=True)
 
 # import curses
 # from time import sleep
 
-# ──────────────── Drilling Mechanism (Nicky ────────────────
+# Initialize detection system
+target_system = TargetDetection()
+
+print("Initialized target system", flush=True)
+
+target_system.start()
+
+# ──────────────── Drilling Mechanism (Nicky) ────────────────
 
 # detections = target_system.get_gauge_pressure()
 # Note to Nicky - pressure plate detection target_system.get_gauge_pressure() - Lower limit 2 Bar. Needs low pass filter
-# Initialise Servo
-# servo = AngularServo(12, min_angle=0, max_angle=360, min_pulse_width=0.0005, max_pulse_width=0.0025)
-
 time.sleep(1)
 
 # Initialize Servo (GPIO pin 13)
@@ -60,15 +74,53 @@ servo = AngularServo(
     max_pulse_width=0.0025
 )
 
-def Drill():
-    print("Starting drill sequence...")
-    servo.angle = 360
-    time.sleep(93)  # 93 which is almost 1.5 minutes
-    servo.angle = 0
-    time.sleep(93)
-    servo.angle = 90
-    print("Drill sequence completed.")
+def drill_loop_thread():
+    """ Thread for drill that constantly averages pressure guage readings
+        Commences drilling once pressure guage is under threshold (2 bar)"""
+    
+    def Drill():
+        print("Starting drill sequence...")
+        servo.angle = 360
+        time.sleep(93)  # 93 which is almost 1.5 minutes
+        servo.angle = 0
+        time.sleep(93)
+        servo.angle = 90
+        print("Drill sequence completed.")
 
+    # Parameters
+    MOVING_AVG_WINDOW = 10
+    PRESSURE_THRESHOLD = 2
+    READ_DELAY = 0.1
+
+    pressure_window = deque(maxlen=MOVING_AVG_WINDOW)
+
+    while True:
+        # Read pressure gauge
+        pressure = target_system.get_gauge_pressure()
+        if pressure is None:
+            print("No Pressure Reading")
+            time.sleep(READ_DELAY)
+            continue
+        
+        # Store in rolling window
+        pressure_window.append(pressure)
+
+        # Compute moving average
+        avg_pressure = sum(pressure_window) / len(pressure_window)
+
+        print(f"Pressure: {pressure:.2f} bar | Avg: {avg_pressure:.2f} bar")
+
+        # Check threshold condition
+        if len(pressure_window) == MOVING_AVG_WINDOW and avg_pressure < PRESSURE_THRESHOLD:
+            print("✅ Pressure below threshold — commence drilling!")
+            Drill()
+        else:
+            print("⏳ Waiting for pressure to drop...")
+
+        time.sleep(READ_DELAY)
+
+# Start Drill Thread
+Thread(target=drill_loop_thread, daemon=True).start()
 
 # ──────────────── Get IP ────────────────
 def get_ip():
@@ -82,9 +134,6 @@ def get_ip():
     finally:
         s.close()
     return ip
-
-ip = get_ip()
-# print("Detected IP:", ip)
 
 # ──────────────── ENVIRO+ SENSORS AND LCD ────────────────
 
@@ -108,35 +157,6 @@ try:
 
     # Initialize display.
     disp.begin()
-
-    # Width and height to calculate text position.
-    WIDTH = disp.width
-    HEIGHT = disp.height
-
-    # New canvas to draw on.
-    img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))
-    draw = ImageDraw.Draw(img)
-
-    # Text settings.
-    font_size = 20
-    font = ImageFont.truetype(UserFont, font_size)
-    text_colour = (255, 255, 255)
-    back_colour = (0, 170, 170)
-
-    message = ip
-
-    x1, y1, x2, y2 = font.getbbox(message)
-    size_x = x2 - x1
-    size_y = y2 - y1
-
-    # ext position
-    x = (WIDTH - size_x) / 2
-    y = (HEIGHT / 2) - (size_y / 2)
-
-    # write text.
-    draw.rectangle((0, 0, 160, 80), back_colour)
-    draw.text((x, y), message, font=font, fill=text_colour)
-    disp.display(img)
 
     print("Enviro+ and LCD initialised correctly.")
 
@@ -232,17 +252,6 @@ def init_db():
     conn.close()
 
 # ──────────────── TARGET DETECTION INTEGRATION (Oliver) ────────────────
-
-from target_detection.interface import TargetDetectionDummy
-from target_detection.inference import TargetDetection
-
-# Initialize detection system
-target_system = TargetDetection()
-
-print("Initialized target system", flush=True)
-
-target_system.start()
-
 def gen_frames():
     """Generate MJPEG frames using the active detection system."""
     global target_system
@@ -254,7 +263,7 @@ def gen_frames():
             yield frame_bytes
 
 
-# ──────────────── DEPTHAI CAMERA ────────────────
+# # ──────────────── DEPTHAI CAMERA ────────────────
 
 if not os.path.exists(IMAGE_DIR):
     os.makedirs(IMAGE_DIR)
@@ -302,55 +311,16 @@ def delete_image(filename):
         return jsonify({"status": "error", "message": "File not found"}), 404
 
 # ──────────────── LCD CONTROL ROUTES (Charlie)  ────────────────
+mode = 0        # 0 = ip-address, 1 = target-detection, 2 = temperature
 
-from threading import Thread
-
-lcd_loop_active = False
+lcd_loop_active = True
 current_mode = "ip"
-
-frame = target_system.get_image_bytes(encode=False) # <-- gets the taget image frame
-proximity = ltr559.get_proximity #<-- proximity trigger
-
-def lcd_show_message(title, value=None):
-    """Render text on the LCD with title + value formatting (stacked lines)."""
-    global disp, draw, font
-
-    WIDTH, HEIGHT = disp.width, disp.height
-    img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))
-    draw = ImageDraw.Draw(img)
-
-    # Fonts
-    title_font = ImageFont.truetype(UserFont, 16)
-    value_font = ImageFont.truetype(UserFont, 22)
-
-    # Colors
-    text_colour = (255, 255, 255)
-    back_colour = (0, 100, 180)
-
-    # Draw background
-    draw.rectangle((0, 0, WIDTH, HEIGHT), back_colour)
-
-    # If no value provided, just display one centered line
-    if not value:
-        tw, th = title_font.getbbox(title)[2:]
-        draw.text(((WIDTH - tw) / 2, (HEIGHT - th) / 2), title, font=title_font, fill=text_colour)
-    else:
-        # Draw title (top line)
-        tw, th = title_font.getbbox(title)[2:]
-        draw.text(((WIDTH - tw) / 2, 10), title, font=title_font, fill=text_colour)
-
-        # Draw value (bottom line)
-        vw, vh = value_font.getbbox(value)[2:]
-        draw.text(((WIDTH - vw) / 2, (HEIGHT / 2)), value, font=value_font, fill=text_colour)
-
-    disp.display(img)
 
 @app.route("/lcd/on", methods=["POST"])
 def lcd_on():
     """Turn the LCD backlight ON."""
     try:
         disp.set_backlight(True)
-        lcd_show_message(ip)
         return jsonify({"status": "ok", "message": "LCD backlight turned on"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -365,67 +335,165 @@ def lcd_off():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
+# NEED TO FIX FRONT END MODE SWITCHING HERE
 @app.route("/lcd/show/<mode>", methods=["POST"])
 def lcd_show(mode):
     """Show a specific display mode (ip, temperature, humidity, pressure)."""
     global current_mode
     try:
         current_mode = mode
-        if mode == "ip":
+        if mode == 0:
             lcd_show_message(ip)
-        elif mode == "temperature":
+        elif mode == 1:
             lcd_show_message(f"TEMP: {bme280.get_temperature():.1f}C")
-        elif mode == "humidity":
-            lcd_show_message(f"HUM: {bme280.get_humidity():.1f}%")
-        elif mode == "pressure":
-            lcd_show_message(f"PRES: {bme280.get_pressure():.1f}hPa")
+        elif mode == 2:
+            lcd_show_message(f"TEMP: {bme280.get_temperature():.1f}C")
         else:
             lcd_show_message(mode.upper())
         return jsonify({"status": "ok", "message": f"LCD showing {mode}"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
-@app.route("/lcd/loop", methods=["POST"])
-def lcd_loop_toggle():
-    """Toggle looping between sensor displays."""
-    global lcd_loop_active
-    lcd_loop_active = not lcd_loop_active
-
-    if lcd_loop_active:
-        Thread(target=lcd_loop_thread, daemon=True).start()
-        return jsonify({"status": "ok", "message": "LCD looping started"})
-    else:
-        return jsonify({"status": "ok", "message": "LCD looping stopped"})
-
-
 def lcd_loop_thread():
     """Cycle through sensor values automatically."""
-    global lcd_loop_active
-    modes = ["temperature", "humidity", "pressure"]
-    delay = 5  # seconds per mode
+    global mode
 
-    while lcd_loop_active:
-        for mode in modes:
-            if not lcd_loop_active:
-                return  # gracefully exit loop if toggled off
+    # Get the temperature of the CPU for compensation
+    def get_cpu_temperature():
+        process = Popen(["vcgencmd", "measure_temp"], stdout=PIPE, universal_newlines=True)
+        output, _error = process.communicate()
+        return float(output[output.index("=") + 1:output.rindex("'")])
 
-            try:
-                if mode == "temperature":
-                    val = f"TEMP: {bme280.get_temperature():.1f}C"
-                elif mode == "humidity":
-                    val = f"HUM: {bme280.get_humidity():.1f}%"
-                elif mode == "pressure":
-                    val = f"PRES: {bme280.get_pressure():.1f}hPa"
+    # Displays data and text on the 0.96" LCD
+    def display_text(variable, data, unit):
+        # Maintain length of list
+        values[variable] = values[variable][1:] + [data]
+        # Scale the values for the variable between 0 and 1
+        vmin = min(values[variable])
+        vmax = max(values[variable])
+        colours = [(v - vmin + 1) / (vmax - vmin + 1) for v in values[variable]]
+        # Format the variable name and value
+        message = f"{variable[:4]}: {data:.1f} {unit}"
+        logging.info(message)
+        draw.rectangle((0, 0, WIDTH, HEIGHT), (255, 255, 255))
+        for i in range(len(colours)):
+            # Convert the values to colours from red to blue
+            colour = (1.0 - colours[i]) * 0.6
+            r, g, b = [int(x * 255.0) for x in colorsys.hsv_to_rgb(colour, 1.0, 1.0)]
+            # Draw a 1-pixel wide rectangle of colour
+            draw.rectangle((i, top_pos, i + 1, HEIGHT), (r, g, b))
+            # Draw a line graph in black
+            line_y = HEIGHT - (top_pos + (colours[i] * (HEIGHT - top_pos))) + top_pos
+            draw.rectangle((i, line_y, i + 1, line_y + 1), (0, 0, 0))
+        # Write the text at the top in black
+        draw.text((0, 0), message, font=font, fill=(0, 0, 0))
+        disp.display(img)
+
+    WIDTH = disp.width
+    HEIGHT = disp.height
+
+    # Set up canvas and font
+    img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    font_size = 20
+    font = ImageFont.truetype(UserFont, font_size)
+
+    message = ""
+
+    # The position of the top bar
+    top_pos = 25
+
+    # temperature down, and increase to adjust up
+    factor = 2.25
+
+    cpu_temps = [get_cpu_temperature()] * 5
+
+    delay = 0.5  # Debounce the proximity tap
+    last_page = 0
+    light = 1
+
+    # Create a values dict to store the data
+    variables = ["ip-address",
+                "target-detections",
+                "temperature"]
+
+    values = {}
+    for v in variables:
+        values[v] = [1] * WIDTH
+
+    # The main loop
+    try:
+        while True:
+            proximity = ltr559.get_proximity()
+
+            # If the proximity crosses the threshold, toggle the mode
+            if proximity > 1500 and time.time() - last_page > delay:
+                mode += 1
+                mode %= len(variables)
+                last_page = time.time()
+
+            # ========== MODE 0: IP ==========
+            if mode == 0:
+                ip = get_ip()
+
+                WIDTH, HEIGHT = disp.width, disp.height
+                img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))  # clean background
+                draw = ImageDraw.Draw(img)
+
+                title_font = ImageFont.truetype(UserFont, 16)
+                value_font = ImageFont.truetype(UserFont, 22)
+
+                text_colour = (255, 255, 255)
+                back_colour = (0, 100, 180)
+                draw.rectangle((0, 0, WIDTH, HEIGHT), back_colour)
+
+                # Title
+                title = "IP ADDRESS"
+                tw, th = title_font.getbbox(title)[2:]
+                draw.text(((WIDTH - tw) / 2, 5), title, font=title_font, fill=text_colour)
+
+                # IP Address
+                vw, vh = value_font.getbbox(ip)[2:]
+                draw.text(((WIDTH - vw) / 2, (HEIGHT / 2)), ip, font=value_font, fill=text_colour)
+
+                disp.display(img)
+
+            # ========== MODE 1: TARGET DETECTION IMAGE ==========
+            elif mode == 1:
+                # path = "test_image.jpg"
+                # det_img = Image.open(path)
+                detection = target_system.get_image_bytes(encode=False)  # -> np.ndarray (BGR)
+                if detection is None:
+                    print("No frame yet")
                 else:
-                    val = mode.upper()
+                    # Show the camera frame
+                    # detection is np.ndarray in BGR; convert to RGB and resize to LCD
+                    rgb = cv2.cvtColor(detection, cv2.COLOR_BGR2RGB)
+                    frame_img = Image.fromarray(rgb)
 
-                lcd_show_message(val)
-            except Exception as e:
-                print(f"[LCD LOOP ERROR] {e}")
+                    # Resize to LCD resolution (keeps aspect ratio or fill; choose one)
+                    WIDTH, HEIGHT = disp.width, disp.height
+                    frame_img = frame_img.resize((WIDTH, HEIGHT), Image.BILINEAR)
 
-            time.sleep(delay)
+                    disp.display(frame_img)
+
+            # ========== MODE 2: TEMPERATURE ==========
+            if mode == 2:
+                # variable = "temperature"
+                unit = "°C"
+                cpu_temp = get_cpu_temperature()
+                # Smooth out with some averaging to decrease jitter
+                cpu_temps = cpu_temps[1:] + [cpu_temp]
+                avg_cpu_temp = sum(cpu_temps) / float(len(cpu_temps))
+                raw_temp = bme280.get_temperature()
+                data = raw_temp - ((avg_cpu_temp - raw_temp) / factor)
+                display_text(variables[mode], data, unit)
+
+    except Exception as e:
+        print(f"[LCD LOOP ERROR] {e}")
+
+# Start LCD Thread
+Thread(target=lcd_loop_thread, daemon=True).start()
 
 # ──────────────── ROUTES ────────────────
 
