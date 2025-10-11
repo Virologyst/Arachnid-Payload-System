@@ -7,6 +7,7 @@ import math
 import time
 import threading
 import traceback
+from pathlib import Path
 
 class DetectionType(Enum):
     AruCo = "AruCo"
@@ -60,40 +61,52 @@ _PALETTE = np.array([
 def _color(cid: int):
     return _PALETTE[cid % len(_PALETTE)].tolist()
 
-CLASS_CONFIDENCES = {'AruCo': 0.7, 'fire_extinguisher': 0.7, 'needle_centre': 0.50, 'needle_tip': 0.3, 'valve_closed': 0.6, 'valve_open': 0.6}
+CLASS_CONFIDENCES = {'AruCo': 0.7, 'fire_extinguisher': 0.7, 'needle_centre': 0.01, 'needle_tip': 0.01, 'valve_closed': 0.80, 'valve_open': 0.80}
 LABELS = list(CLASS_CONFIDENCES.keys())
 ARUCO_MARKER_SIDE_LENGTH = 0.25 #Side length in meters
 
 def get_aruco_markers(frame: np.ndarray, detector,
-                       camera_matrix, distance_matrix) -> np.ndarray:
+                       camera_matrix, distance_matrix) -> list[Detection]:
     grey = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
     corners, ids, _ = detector.detectMarkers(grey)
     if ids is None:
-        return frame
+        return []
     
-    rot_vecs, trans_vecs, _ = cv2.aruco.estimatePoseSingleMarkers(
-        corners,
-        ARUCO_MARKER_SIDE_LENGTH,
-        camera_matrix,
-        distance_matrix)
-    aruco_dets = [
-        Detection(
-            type=DetectionType.AruCo,
-            confidence=1.0,
-            x=corners[idx][0][0],
-            y=corners[idx][0][1],
-            width=corners[idx][2][0] - corners[idx][0][0],
-            height=corners[idx][2][1] - corners[idx][0][1],
-            angle = None,
-            location = Point3D(
-                x=trans_vecs[idx][0],
-                y=trans_vecs[idx][1],
-                z=trans_vecs[idx][2]
-            ),
-            id=ids[idx]
+    marker_size = 0.1
+    obj_points = np.array([
+        [-marker_size / 2, -marker_size / 2, 0],  
+        [ marker_size / 2, -marker_size / 2, 0], 
+        [ marker_size / 2,  marker_size / 2, 0], 
+        [-marker_size / 2,  marker_size / 2, 0],
+    ], dtype=np.float32)
+
+    aruco_dets = []
+    for idx, corner in enumerate(corners):
+        img_points = corner
+
+        _, rot_vecs, trans_vec = cv2.solvePnP(
+            obj_points,
+            img_points,
+            camera_matrix,
+            distance_matrix)
+
+        aruco_dets.append(
+            Detection(
+                type=DetectionType.AruCo,
+                confidence=1.0,
+                x=corner[0][0][0],
+                y=corner[0][0][1],
+                width=corner[0][2][0] - corner[0][0][0],
+                height=corner[0][2][1] - corner[0][0][1],
+                angle = None,
+                location = Point3D(
+                    x=trans_vec[0],
+                    y=trans_vec[1],
+                    z=trans_vec[2]
+                ),
+                id=ids[idx]
+            )
         )
-        for idx in len(corners)
-    ]
     
 
     return aruco_dets
@@ -158,7 +171,8 @@ class TargetDetectionInterface:
       - start()/stop(): manage background producer
       - get_image_bytes()/get_detections(): thread-safe access to latest
     """
-    def __init__(self, cb: Optional[Callable[[], None]] = None, camera_calibration_parameters_filename:str="calibration_chessboard.yaml"):
+    def __init__(self, cb: Optional[Callable[[], None]] = None, 
+    camera_calibration_parameters_filename:Path=Path(__file__).parent / "calibration_chessboard.yaml"):
         self.new_image_cb: Optional[Callable[[], None]] = cb
         self._lock = threading.Lock()
         self._new_image_event = threading.Event()
@@ -169,13 +183,13 @@ class TargetDetectionInterface:
 
         cv_file = cv2.FileStorage(
             camera_calibration_parameters_filename, cv2.FILE_STORAGE_READ)
-        mtx = cv_file.getNode('K').mat()
-        dst = cv_file.getNode('D').mat()
+        self.mtx = cv_file.getNode('K').mat()
+        self.dst = cv_file.getNode('D').mat()
         cv_file.release()
 
-        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
         self.parameters = cv2.aruco.DetectorParameters()
-        detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.parameters)
+        self.detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.parameters)
 
     def _encode_np_bgr_to_mjpeg(self, np_bgr: np.ndarray) -> bytes:
         (flag, encoded_image) = cv2.imencode(".jpg", np_bgr)
@@ -186,10 +200,13 @@ class TargetDetectionInterface:
 
     def get_image_bytes(self, draw_detections_flag: bool = True, encode=True) -> bytes | None:  # cv2.imencode output
         with self._lock:
-            if draw_detections_flag and self._latest_detections:
-                frame = self._latest_image
-                aruco_dets = get_aruco_markers(frame, self.detector, self.mtx, self.dst)
-                dets = self._latest_detections + aruco_dets
+            frame = self._latest_image
+            print(self._latest_detections)
+            aruco_dets = get_aruco_markers(frame, self.detector, self.mtx, self.dst)
+            dets = []
+            dets.extend(self._latest_detections)
+            dets.extend(aruco_dets)
+            if draw_detections_flag and len(dets) > 0:
                 frame = draw_detections(frame, dets)
                 if encode:
                     return self._encode_np_bgr_to_mjpeg(frame)
@@ -200,7 +217,9 @@ class TargetDetectionInterface:
     
     def get_detections(self) -> list[Detection]:
         with self._lock:
+            dets = self._latest_detections
             aruco_dets = get_aruco_markers(self._latest_image, self.detector, self.mtx, self.dst)
+            dets.extend(aruco_dets)
             return self._latest_detections
 
     def get_gauge_pressure(self) -> Optional[float]:

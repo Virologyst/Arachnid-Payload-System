@@ -10,7 +10,7 @@ import socket
 import smbus2
 import sys
 import cv2
-from threading import Thread
+from threading import Thread, Lock
 from collections import deque
 
 # ───── Third-Party ─────
@@ -66,13 +66,13 @@ target_system.start()
 time.sleep(1)
 
 # Initialize Servo (GPIO pin 13)
-servo = AngularServo(
-    13,
-    min_angle=0,
-    max_angle=360,
-    min_pulse_width=0.0005,
-    max_pulse_width=0.0025
-)
+#servo = AngularServo(
+#    13,
+#    min_angle=0,
+#    max_angle=360,
+#    min_pulse_width=0.0005,
+#    max_pulse_width=0.0025
+#)
 
 def drill_loop_thread():
     """ Thread for drill that constantly averages pressure guage readings
@@ -98,7 +98,7 @@ def drill_loop_thread():
         # Read pressure gauge
         pressure = target_system.get_gauge_pressure()
         if pressure is None:
-            print("No Pressure Reading")
+            #print("No Pressure Reading")
             time.sleep(READ_DELAY)
             continue
         
@@ -311,7 +311,19 @@ def delete_image(filename):
         return jsonify({"status": "error", "message": "File not found"}), 404
 
 # ──────────────── LCD CONTROL ROUTES (Charlie)  ────────────────
-mode = 0        # 0 = ip-address, 1 = target-detection, 2 = temperature
+# mode = 0        # 0 = ip-address, 1 = target-detection, 2 = temperature
+MODE_IP, MODE_DET, MODE_TEMP = 0, 1, 2
+_mode = MODE_IP
+_mode_lock = Lock()
+
+def set_mode(m: int) -> None:
+    global _mode
+    with _mode_lock:
+        _mode = m
+
+def get_mode() -> int:
+    with _mode_lock:
+        return _mode
 
 lcd_loop_active = True
 current_mode = "ip"
@@ -335,32 +347,29 @@ def lcd_off():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# NEED TO FIX FRONT END MODE SWITCHING HERE
-@app.route("/lcd/show/<mode>", methods=["POST"])
-def lcd_show(mode):
-    """Show a specific display mode (ip, temperature, humidity, pressure)."""
-    global current_mode
-    try:
-        current_mode = mode
-        if mode == 0:
-            lcd_show_message(ip)
-        elif mode == 1:
-            lcd_show_message(f"TEMP: {bme280.get_temperature():.1f}C")
-        elif mode == 2:
-            lcd_show_message(f"TEMP: {bme280.get_temperature():.1f}C")
-        else:
-            lcd_show_message(mode.upper())
-        return jsonify({"status": "ok", "message": f"LCD showing {mode}"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+@app.route("/lcd/show/ip", methods=["POST"])
+def lcd_show_ip():
+    """Show IP Address"""
+    set_mode(MODE_IP)
+    return jsonify(ok=True, mode="ip")
+    
+@app.route("/lcd/show/liveDetections", methods=["POST"])
+def liveDetections_show():
+    """Show Live Detections"""
+    set_mode(MODE_DET)
+    return jsonify(ok=True, mode="liveDetections")
+
+@app.route("/lcd/show/temperature", methods=["POST"])
+def liveTemperatures_show():
+    """Show Live Temperatures"""
+    set_mode(MODE_TEMP)
+    return jsonify(ok=True, mode="temperature")
 
 def lcd_loop_thread():
     """Cycle through sensor values automatically."""
-    global mode
-
     # Get the temperature of the CPU for compensation
     def get_cpu_temperature():
-        process = Popen(["vcgencmd", "measure_temp"], stdout=PIPE, universal_newlines=True)
+        process = Popen(["/usr/bin/vcgencmd", "measure_temp"], stdout=PIPE, universal_newlines=True)
         output, _error = process.communicate()
         return float(output[output.index("=") + 1:output.rindex("'")])
 
@@ -425,15 +434,18 @@ def lcd_loop_thread():
     try:
         while True:
             proximity = ltr559.get_proximity()
+            mode = get_mode()
 
             # If the proximity crosses the threshold, toggle the mode
             if proximity > 1500 and time.time() - last_page > delay:
-                mode += 1
-                mode %= len(variables)
+                # Cycle to next mode safely
+                next_mode = (mode + 1) % len(variables)
+                set_mode(next_mode)
                 last_page = time.time()
+                mode = next_mode  # reflect immediately
 
             # ========== MODE 0: IP ==========
-            if mode == 0:
+            if mode == MODE_IP:
                 ip = get_ip()
 
                 WIDTH, HEIGHT = disp.width, disp.height
@@ -459,7 +471,7 @@ def lcd_loop_thread():
                 disp.display(img)
 
             # ========== MODE 1: TARGET DETECTION IMAGE ==========
-            elif mode == 1:
+            elif mode == MODE_DET:
                 # path = "test_image.jpg"
                 # det_img = Image.open(path)
                 detection = target_system.get_image_bytes(encode=False)  # -> np.ndarray (BGR)
@@ -478,7 +490,7 @@ def lcd_loop_thread():
                     disp.display(frame_img)
 
             # ========== MODE 2: TEMPERATURE ==========
-            if mode == 2:
+            if mode == MODE_TEMP:
                 # variable = "temperature"
                 unit = "°C"
                 cpu_temp = get_cpu_temperature()
