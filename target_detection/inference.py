@@ -6,7 +6,7 @@ import numpy as np
 import cv2, time, math
 from collections import deque
 
-from .interface import TargetDetectionInterface, Detection, DetectionType
+from .interface import TargetDetectionInterface, Detection, DetectionType, CLASS_CONFIDENCES
 
 # =========================
 # Config
@@ -68,8 +68,13 @@ class TargetDetection(TargetDetectionInterface):
     def _parse_detections(self, dmsg: dai.NNData) -> list[Detection]:
         dets: list[Detection] = []
         for det in dmsg.detections:
+            cls = det.label
+            name = self.label_encoding.get(cls, str(cls))
+            if name in ["fire_extinguisher", "AruCo"]:
+                continue
+
             score = det.confidence
-            if score < CONF_THRESH:
+            if score < CLASS_CONFIDENCES[name]:
                 continue
             rect = det.rotated_rect
             # convert to xywh
@@ -80,8 +85,7 @@ class TargetDetection(TargetDetectionInterface):
             y2 = int(maxy*INPUT_H)
             w = x2 - x1
             h = y2 - y1
-            cls = det.label
-            name = self.label_encoding.get(cls, str(cls))
+            
             detection = Detection(
                 confidence=score if score is not None else 0.0,
                 x=x1, y=y1, width=w, height=h,

@@ -12,10 +12,18 @@ class DetectionType(Enum):
     AruCo = "AruCo"
     ValveOpen = "valve_open"
     ValveClosed = "valve_closed"
-    NeedleCenter = "needle_center"
+    NeedleCenter = "needle_centre"
     NeedleTip = "needle_tip"
     FireExtinguisher = "fire_extinguisher"
 
+@dataclass
+class Point3D:
+    x: float
+    y: float
+    z: float
+
+    def __repr__(self):
+        return (f"({self.x},{self.y},{self.z})")
 
 @dataclass 
 class Detection:
@@ -26,6 +34,7 @@ class Detection:
     width: int
     height: int
     angle: Optional[float] # Angle in degrees, only for Gauge type detections
+    location: Optional[Point3D]
 
     def __repr__(self):
         return (f"Detection(type={self.type}, conf={self.confidence:.2f}, "
@@ -43,7 +52,44 @@ _PALETTE = np.array([
 def _color(cid: int):
     return _PALETTE[cid % len(_PALETTE)].tolist()
 
-LABELS = ['AruCo', 'fire_extinguisher', 'needle_center', 'needle_tip', 'valve_closed', 'valve_open'] # Has to be synced with DetectionType enum
+CLASS_CONFIDENCES = {'AruCo': 0.7, 'fire_extinguisher': 0.7, 'needle_centre': 0.55, 'needle_tip': 0.3, 'valve_closed': 0.7, 'valve_open': 0.7}
+LABELS = list(CLASS_CONFIDENCES.keys())
+ARUCO_MARKER_SIDE_LENGTH = 0.25 #Side length in meters
+
+def get_aruco_markers(frame: np.ndarray, detector,
+                       camera_matrix, distance_matrix) -> np.ndarray:
+    grey = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    corners, ids, _ = detector.detectMarkers(grey)
+    if ids is None:
+        return frame
+    
+    rot_vecs, trans_vecs, _ = cv2.aruco.estimatePoseSingleMarkers(
+        corners,
+        ARUCO_MARKER_SIDE_LENGTH,
+        camera_matrix,
+        distance_matrix)
+    aruco_dets = [
+        Detection(
+            type=DetectionType.AruCo,
+            confidence=1.0,
+            x=corners[idx][0][0],
+            y=corners[idx][0][1],
+            width=corners[idx][2][0] - corners[idx][0][0],
+            height=corners[idx][2][1] - corners[idx][0][1],
+            angle = None,
+            location = Point3D(
+                x=trans_vecs[idx][0],
+                y=trans_vecs[idx][1],
+                z=trans_vecs[idx][2]
+            )
+        )
+        for idx in len(corners)
+    ]
+    
+
+    return aruco_dets
+
+
 def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
     """
     dets: list of Detection objects
@@ -68,6 +114,9 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
 
         name = det.type.value
         text = f"{name} {conf:.2f}"
+        if det.type == DetectionType.AruCo:
+            text += f" {det.location}"
+
         (tw, th_text), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         bx = x1; by = max(0, y1 - th_text - 6)
         cv2.rectangle(frame, (bx, by), (bx + tw + 6, by + th_text + 6), color, -1)
@@ -82,7 +131,7 @@ class TargetDetectionInterface:
       - start()/stop(): manage background producer
       - get_image_bytes()/get_detections(): thread-safe access to latest
     """
-    def __init__(self, cb: Optional[Callable[[], None]] = None):
+    def __init__(self, cb: Optional[Callable[[], None]] = None, camera_calibration_parameters_filename:str="cam_params.mat"):
         self.new_image_cb: Optional[Callable[[], None]] = cb
         self._lock = threading.Lock()
         self._new_image_event = threading.Event()
@@ -90,6 +139,16 @@ class TargetDetectionInterface:
         self._latest_image: Optional[np.ndarray] = None
         self._thr: Optional[threading.Thread] = None
         self._stop = threading.Event()
+
+        cv_file = cv2.FileStorage(
+            camera_calibration_parameters_filename, cv2.FILE_STORAGE_READ)
+        mtx = cv_file.getNode('K').mat()
+        dst = cv_file.getNode('D').mat()
+        cv_file.release()
+
+        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+        self.parameters = cv2.aruco.DetectorParameters()
+        detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.parameters)
 
     def _encode_np_bgr_to_mjpeg(self, np_bgr: np.ndarray) -> bytes:
         (flag, encoded_image) = cv2.imencode(".jpg", np_bgr)
@@ -102,7 +161,9 @@ class TargetDetectionInterface:
         with self._lock:
             if draw_detections_flag and self._latest_detections:
                 frame = self._latest_image
-                frame = draw_detections(frame, self._latest_detections)
+                aruco_dets = get_aruco_markers(frame, self.detector, self.mtx, self.dst)
+                dets = self._latest_detections + aruco_dets
+                frame = draw_detections(frame, dets)
                 if encode:
                     return self._encode_np_bgr_to_mjpeg(frame)
                 return frame
@@ -112,6 +173,7 @@ class TargetDetectionInterface:
     
     def get_detections(self) -> list[Detection]:
         with self._lock:
+            aruco_dets = get_aruco_markers(self._latest_image, self.detector, self.mtx, self.dst)
             return self._latest_detections
 
     def get_gauge_pressure(self) -> Optional[float]:
