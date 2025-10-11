@@ -98,7 +98,11 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
     frame: BGR HxWx3 (draws in-place)
     """
     H, W = frame.shape[:2]
+    gauge_detected = False
     for det in dets:
+        if det.type == DetectionType.NeedleCenter:
+            gauge_detected = True
+
         cid = LABELS.index(det.type.value)
         conf = det.confidence
         x1 = max(0, min(W-1, int(det.x)))
@@ -124,6 +128,12 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
         cv2.rectangle(frame, (bx, by), (bx + tw + 6, by + th_text + 6), color, -1)
         cv2.putText(frame, text, (bx + 3, by + th_text + 1),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+        
+    #if gauge_detected:
+        #Draw the triange for the gauge
+    #    needle_centre_centre = 
+    #    needle_tip_centre = 
+
     return frame
 
 class TargetDetectionInterface:
@@ -133,7 +143,7 @@ class TargetDetectionInterface:
       - start()/stop(): manage background producer
       - get_image_bytes()/get_detections(): thread-safe access to latest
     """
-    def __init__(self, cb: Optional[Callable[[], None]] = None, camera_calibration_parameters_filename:str="cam_params.mat"):
+    def __init__(self, cb: Optional[Callable[[], None]] = None, camera_calibration_parameters_filename:str="calibration_chessboard.yaml"):
         self.new_image_cb: Optional[Callable[[], None]] = cb
         self._lock = threading.Lock()
         self._new_image_event = threading.Event()
