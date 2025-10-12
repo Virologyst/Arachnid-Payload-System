@@ -315,7 +315,6 @@ def delete_image(filename):
         return jsonify({"status": "error", "message": "File not found"}), 404
 
 # ──────────────── LCD CONTROL ROUTES (Charlie)  ────────────────
-# mode = 0        # 0 = ip-address, 1 = target-detection, 2 = temperature
 MODE_IP, MODE_DET, MODE_TEMP = 0, 1, 2
 _mode = MODE_IP
 _mode_lock = Lock()
@@ -369,13 +368,14 @@ def liveTemperatures_show():
     set_mode(MODE_TEMP)
     return jsonify(ok=True, mode="temperature")
 
+# Get the temperature of the CPU for compensation
+def get_cpu_temperature():
+    process = Popen(["/usr/bin/vcgencmd", "measure_temp"], stdout=PIPE, universal_newlines=True)
+    output, _error = process.communicate()
+    return float(output[output.index("=") + 1:output.rindex("'")])
+
 def lcd_loop_thread():
     """Cycle through sensor values automatically."""
-    # Get the temperature of the CPU for compensation
-    def get_cpu_temperature():
-        process = Popen(["/usr/bin/vcgencmd", "measure_temp"], stdout=PIPE, universal_newlines=True)
-        output, _error = process.communicate()
-        return float(output[output.index("=") + 1:output.rindex("'")])
 
     # Displays data and text on the 0.96" LCD
     def display_text(variable, data, unit):
@@ -512,7 +512,6 @@ def lcd_loop_thread():
 Thread(target=lcd_loop_thread, daemon=True).start()
 
 # ──────────────── ROUTES ────────────────
-
 @app.route('/drill', methods=['POST'])
 def drill_endpoint():
     try:
@@ -594,7 +593,16 @@ def video_feed():
 def get_enviro_data():
     """Read Enviro+ and return JSON."""
     try:
-        temperature = round(bme280.get_temperature(), 1)
+        factor = 2.25
+        cpu_temp = get_cpu_temperature()
+        cpu_temps = [get_cpu_temperature()] * 5
+        # Smooth out with some averaging to decrease jitter
+        cpu_temps = cpu_temps[1:] + [cpu_temp]
+        avg_cpu_temp = sum(cpu_temps) / float(len(cpu_temps))
+        raw_temp = bme280.get_temperature()
+        data = raw_temp - ((avg_cpu_temp - raw_temp) / factor)
+
+        temperature = round(data, 1)
         pressure = round(bme280.get_pressure(), 1)
         humidity = round(bme280.get_humidity(), 1)
 

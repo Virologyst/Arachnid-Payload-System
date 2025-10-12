@@ -9,15 +9,34 @@
         try {
             const res = await fetch("/targets");
             const data = await res.json();
-
+            console.log(`${data}\n`);
             // Log every key/value or just a summary
             if (Array.isArray(data)) {
                 data.forEach(target => {
+                    const target_type = JSON.parse(target)
+                    console.log(`Target ${target_type}\n`);
+                    /*const utterance = new SpeechSynthesisUtterance(target_type.type);
+                    speechSynthesis.speak(utterance);
+                    console.log(`Target type: ${target_type.type1}`);*/
                     log(`Target detected: ${JSON.stringify(target)}`, 'TARGET');
                 });
             } else if (typeof data === 'object') {
                 for (const [k, v] of Object.entries(data)) {
                     log(`${k}: ${v}`, 'TARGET');
+                    log(`Detections something ${target}`, 'TARGET');
+                    if(k == "detections") {
+                        log(`Detections something ${target}`, 'TARGET');
+                        //v list of str
+                        v.forEach(target => {
+                            target_type = JSON.parse(target);
+                            const utterance = new SpeechSynthesisUtterance(target_type.type);
+                            speechSynthesis.speak(utterance);
+                        })
+                    }
+                    /*const target_type = JSON.parse(v)
+                    const utterance = new SpeechSynthesisUtterance(target_type);
+                    speechSynthesis.speak(utterance);
+                    console.log(`Target type: ${target_type}`);*/
                 }
             } else {
                 log(`Target update: ${data}`, 'TARGET');
@@ -310,7 +329,6 @@
                             <button on:click={updateDevice} disabled={loading} class="update-btn">
                                 Update & Restart
                             </button>
-                            <!-- <button class="update-btn" on:click={speakText}>Speak</button> -->
 
                             <h2>LCD Controls</h2>
                             <div class="lcd-controls">
