@@ -45,8 +45,9 @@ class Detection:
                 f"angle={self.angle})")
 
 def angle_to_bar(angle: float) -> float:
-    pressure_map_slope = (5 - 2) / (90 - 0)
-    pressure_map_intercept = -1
+    print(f"angle: ", angle)
+    pressure_map_slope = 0.035497786
+    pressure_map_intercept = 1.761752167
     result = pressure_map_slope * angle + pressure_map_intercept
     return result
 
@@ -62,7 +63,7 @@ _PALETTE = np.array([
 def _color(cid: int):
     return _PALETTE[cid % len(_PALETTE)].tolist()
 
-CLASS_CONFIDENCES = {'AruCo': 0.7, 'fire_extinguisher': 0.7, 'needle_centre': 0.01, 'needle_tip': 0.01, 'valve_closed': 0.80, 'valve_open': 0.80}
+CLASS_CONFIDENCES = {'AruCo': 0.7, 'fire_extinguisher': 0.7, 'needle_centre': 0.03, 'needle_tip': 0.03, 'valve_closed': 0.80, 'valve_open': 0.80}
 LABELS = list(CLASS_CONFIDENCES.keys())
 ARUCO_MARKER_SIDE_LENGTH = 0.25 #Side length in meters
 
