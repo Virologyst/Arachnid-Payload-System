@@ -307,10 +307,10 @@
                     {:else if currentView === 'system'}
                         <div>
                             <h2>System Controls</h2>
-                           <button on:click={updateDevice} disabled={loading} class="update-btn">
+                            <button on:click={updateDevice} disabled={loading} class="update-btn">
                                 Update & Restart
                             </button>
-                            <button class="update-btn" on:click={speakText}>Speak</button>
+                            <!-- <button class="update-btn" on:click={speakText}>Speak</button> -->
 
                             <h2>LCD Controls</h2>
                             <div class="lcd-controls">
