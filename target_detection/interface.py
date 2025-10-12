@@ -45,7 +45,6 @@ class Detection:
                 f"angle={self.angle})")
 
 def angle_to_bar(angle: float) -> float:
-    print(f"angle: ", angle)
     pressure_map_slope = 0.035497786
     pressure_map_intercept = -1.433048
     result = pressure_map_slope * angle + pressure_map_intercept
