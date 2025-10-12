@@ -124,7 +124,7 @@ def draw_detections(frame: np.ndarray, dets: list[Detection], logger) -> np.ndar
     dets: list of Detection objects
     frame: BGR HxWx3 (draws in-place)
     """
-    repeat_delay = 5
+    repeat_delay = 4
     global last_detections
     global saved_image_last
     now = time.time()
