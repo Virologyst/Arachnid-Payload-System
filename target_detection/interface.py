@@ -7,6 +7,7 @@ import math
 import time
 import threading
 import traceback
+import logging
 from pathlib import Path
 
 class DetectionType(Enum):
@@ -111,12 +112,22 @@ def get_aruco_markers(frame: np.ndarray, detector,
 
     return aruco_dets
 
+last_detections = {DetectionType.AruCo: {}, DetectionType.ValveClosed: time.now(), 
+    DetectionType.ValveOpen: time.now(), DetectionType.NeedleCenter: time.now()}
 
+import time
+import uuid
+saved_image_last = time.now()
 def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
     """
     dets: list of Detection objects
     frame: BGR HxWx3 (draws in-place)
     """
+    repeat_delay = 5
+    global last_detections
+    global saved_image_last
+    now = time.now()
+
     H, W = frame.shape[:2]
     gauge_detected = False
     for det in dets:
@@ -151,6 +162,23 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
         cv2.rectangle(frame, (bx, by), (bx + tw + 6, by + th_text + 6), color, -1)
         cv2.putText(frame, text, (bx + 3, by + th_text + 1),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+        if name == 'valve_closed' of name == 'valve_open':
+            if (now - last_detections[det.type]) > repeat_delay:
+                message = "[TAIP] Open valve detected" if name == "valve_open" else "[TAIP] Closed valve detected"
+                logging.info(message)
+                last_detections[det.type] = now
+        if name == 'AruCo':
+            message = f"[TAIP] AruCo marker {det.id} detected, Position {det.location.x:.2f},{det.location.y:.2f},{det.location.z:.2f}"
+            if det.id in last_detections[det.type].keys():
+                if (now - last_detections[det.type][det.id]) > repeat_delay:
+                    logging.info(message)
+                    last_detections[det.type][det.id] = now
+            else:
+                logging.info(message)
+                last_detections[det.type][det.id] = now
+
+
+
         
     if gauge_detected:
         #Draw the triange for the gauge
@@ -161,6 +189,12 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
         cid = LABELS.index(needle_tip.type.value)
         color = _color(cid)
         cv2.line(frame,  needle_centre_centre, needle_tip_centre, color, 1, cv2.LINE_AA)
+        if now - last_detections['needle_centre']:
+            logging.info(f"[TAIP] Gauge detected")
+
+    if len(dets) > 0 and ((now - saved_image_last) > repeat_delay):
+        cv2.imwrite(f"/home/egh455-g5/DCIM/{uuid.uuid4()}.png", frame)
+        saved_last_image = now
 
     return frame
 
