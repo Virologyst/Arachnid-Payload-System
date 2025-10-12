@@ -112,12 +112,12 @@ def get_aruco_markers(frame: np.ndarray, detector,
 
     return aruco_dets
 
-last_detections = {DetectionType.AruCo: {}, DetectionType.ValveClosed: time.now(), 
-    DetectionType.ValveOpen: time.now(), DetectionType.NeedleCenter: time.now()}
+last_detections = {DetectionType.AruCo: {}, DetectionType.ValveClosed: time.time(), 
+    DetectionType.ValveOpen: time.time(), DetectionType.NeedleCenter: time.time()}
 
 import time
 import uuid
-saved_image_last = time.now()
+saved_image_last = time.time()
 def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
     """
     dets: list of Detection objects
@@ -126,7 +126,7 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
     repeat_delay = 5
     global last_detections
     global saved_image_last
-    now = time.now()
+    now = time.time()
 
     H, W = frame.shape[:2]
     gauge_detected = False
@@ -162,7 +162,7 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
         cv2.rectangle(frame, (bx, by), (bx + tw + 6, by + th_text + 6), color, -1)
         cv2.putText(frame, text, (bx + 3, by + th_text + 1),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
-        if name == 'valve_closed' of name == 'valve_open':
+        if name == 'valve_closed' or name == 'valve_open':
             if (now - last_detections[det.type]) > repeat_delay:
                 message = "[TAIP] Open valve detected" if name == "valve_open" else "[TAIP] Closed valve detected"
                 logging.info(message)
@@ -193,8 +193,8 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
             logging.info(f"[TAIP] Gauge detected")
 
     if len(dets) > 0 and ((now - saved_image_last) > repeat_delay):
-        cv2.imwrite(f"/home/egh455-g5/DCIM/{uuid.uuid4()}.png", frame)
-        saved_last_image = now
+        cv2.imwrite(f"/home/egh455-g5/DCIM/{uuid.uuid4()}.jpg", frame)
+        saved_image_last = now
 
     return frame
 
