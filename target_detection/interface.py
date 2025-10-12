@@ -237,7 +237,6 @@ class TargetDetectionInterface:
     def get_image_bytes(self, draw_detections_flag: bool = True, encode=True) -> bytes | None:  # cv2.imencode output
         with self._lock:
             frame = self._latest_image
-            print(self._latest_detections)
             aruco_dets = get_aruco_markers(frame, self.detector, self.mtx, self.dst)
             dets = []
             dets.extend(self._latest_detections)
