@@ -169,7 +169,7 @@ def draw_detections(frame: np.ndarray, dets: list[Detection], logger) -> np.ndar
                 newest_detections.append(det)
                 last_detections[det.type] = now
         if name == 'AruCo':
-            message = f"[TAIP] AruCo marker {det.id} detected, Position {det.location.x:.2f},{det.location.y:.2f},{det.location.z:.2f}"
+            det.id = int(det.id)
             if det.id in last_detections[det.type].keys():
                 if (now - last_detections[det.type][det.id]) > repeat_delay:
                     newest_detections.append(det)
@@ -245,7 +245,7 @@ class TargetDetectionInterface:
             dets.extend(self._latest_detections)
             dets.extend(aruco_dets)
             if draw_detections_flag and len(dets) > 0:
-                frame, latest_detections = draw_detections(frame, dets, logger)
+                frame, latest_detections = draw_detections(frame, dets, self.logger)
                 self.detection_list.extend(latest_detections)
                 if encode:
                     return self._encode_np_bgr_to_mjpeg(frame)
