@@ -66,41 +66,6 @@
         }).catch(() => {});
     }
 
-    let textToSpeak = "Hello, I am sentient";
-    let voices = [];
-
-    // Load voices once they become available
-    function loadVoices() {
-        voices = window.speechSynthesis.getVoices();
-        if (!voices.length) {
-        window.speechSynthesis.onvoiceschanged = () => {
-            voices = window.speechSynthesis.getVoices();
-        };
-        }
-    }
-
-    function speakText() {
-        if (!('speechSynthesis' in window)) {
-        alert("Text-to-speech not supported in this browser.");
-        return;
-        }
-
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-
-        // Pick a default English voice if available
-        const voice = voices.find(v => v.lang.startsWith("en")) || voices[0];
-        if (voice) utterance.voice = voice;
-
-        utterance.rate = 1;   // speed (0.1–10)
-        utterance.pitch = 1;  // pitch (0–2)
-        utterance.volume = 1; // volume (0–1)
-
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // Load voices on component mount
-    loadVoices();
-
      // Filters
     let fromTime = '';
     let toTime = '';
@@ -342,10 +307,9 @@
                     {:else if currentView === 'system'}
                         <div>
                             <h2>System Controls</h2>
-                            <button on:click={updateDevice} disabled={loading} class="update-btn">
+                           <button on:click={updateDevice} disabled={loading} class="update-btn">
                                 Update & Restart
                             </button>
-                            <button class="update-btn" on:click={speak}>Speak</button>
 
                             <h2>LCD Controls</h2>
                             <div class="lcd-controls">
@@ -355,9 +319,7 @@
                                 <button class="update-btn" on:click={() => fetch('/lcd/show/liveDetections', {method: 'POST'})}>Show Live Detections</button>
                                 <button class="update-btn" on:click={() => fetch('/lcd/show/temperature', {method: 'POST'})}>Show Temperature</button>
                             </div>
-                            {#if audioSrc}
-                                <audio src={audioSrc} controls autoplay></audio>
-                            {/if}
+
                             {#if loading}
                                 <div id="loading">
                                     <img src="loading.gif" alt="Loading..." style="width: 50px;">
@@ -464,3 +426,4 @@
             {/if}
     </div>
 </main>
+
