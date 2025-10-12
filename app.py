@@ -52,8 +52,51 @@ sys.stdout.reconfigure(line_buffering=True)
 # import curses
 # from time import sleep
 
+# ───── App Setup ─────
+app = Flask(__name__, static_folder="static", static_url_path="")
+
+# ───── Logging Setup ─────
+from collections import deque
+import logging
+
+LOG_DIR = "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, "egh455.log")
+
+LOG_BUFFER = deque(maxlen=1000)
+
+# Load existing logs from main log file on start
+if os.path.exists(LOG_FILE):
+    with open(LOG_FILE, "r") as f:
+        lines = f.readlines()[-1000:]  # only keep latest 1000 lines
+        for line in lines:
+            LOG_BUFFER.append(line.strip())
+
+class FrontendBufferHandler(logging.Handler):
+    def emit(self, record):
+        LOG_BUFFER.append(self.format(record))
+
+# St format
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+
+# File handler (persistent logs)
+# file_handler = logging.FileHandler(LOG_FILE)
+file_handler = logging.FileHandler(LOG_FILE, mode='a')
+file_handler.setFormatter(formatter)
+buffer_handler = FrontendBufferHandler()
+buffer_handler.setFormatter(formatter)
+
+# Attach
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+app.logger.addHandler(file_handler)
+app.logger.addHandler(buffer_handler)
+app.logger.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
+app.logger.addHandler(buffer_handler)
+app.logger.propagate = False
+
 # Initialize detection system
-target_system = TargetDetection()
+target_system = TargetDetection(LOG_BUFFER)
 
 print("Initialized target system", flush=True)
 
@@ -167,49 +210,6 @@ except Exception as e:
     print("LCD init failed:", e)
     disp = None
 
-# ───── App Setup ─────
-app = Flask(__name__, static_folder="static", static_url_path="")
-
-# ───── Logging Setup ─────
-from collections import deque
-import logging
-
-LOG_DIR = "logs"
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE = os.path.join(LOG_DIR, "egh455.log")
-
-LOG_BUFFER = deque(maxlen=1000)
-
-# Load existing logs from main log file on start
-if os.path.exists(LOG_FILE):
-    with open(LOG_FILE, "r") as f:
-        lines = f.readlines()[-1000:]  # only keep latest 1000 lines
-        for line in lines:
-            LOG_BUFFER.append(line.strip())
-
-class FrontendBufferHandler(logging.Handler):
-    def emit(self, record):
-        LOG_BUFFER.append(self.format(record))
-
-# St format
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-
-# File handler (persistent logs)
-# file_handler = logging.FileHandler(LOG_FILE)
-file_handler = logging.FileHandler(LOG_FILE, mode='a')
-file_handler.setFormatter(formatter)
-buffer_handler = FrontendBufferHandler()
-buffer_handler.setFormatter(formatter)
-
-# Attach
-logging.getLogger('werkzeug').setLevel(logging.ERROR)
-app.logger.addHandler(file_handler)
-app.logger.addHandler(buffer_handler)
-app.logger.setLevel(logging.INFO)
-app.logger.addHandler(file_handler)
-app.logger.addHandler(buffer_handler)
-app.logger.propagate = False
-
 
 # ──────────────── DATABASE SETUP ────────────────
 DB_PATH = 'database/egh455.db'
@@ -255,6 +255,7 @@ def init_db():
     conn.close()
 
 # ──────────────── TARGET DETECTION INTEGRATION (Oliver) ────────────────
+
 def gen_frames():
     """Generate MJPEG frames using the active detection system."""
     global target_system
@@ -698,13 +699,13 @@ def get_targets():
 
     dets = [
         {
-            "type": det.type.value,
-            "confidence": det.confidence,
-            "x": det.x,
-            "y": det.y,
-            "width": det.width,
-            "height": det.height,
-            "angle": det.angle,
+            "type": str(det.type.value),
+            "confidence": float(det.confidence),
+            "x": float(det.x),
+            "y": float(det.y),
+            "width": float(det.width),
+            "height": float(det.height),
+            "angle": det.angle if det.angle is not None else "None",
         }
         for det in detections
     ]
