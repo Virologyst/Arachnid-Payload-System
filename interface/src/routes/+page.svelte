@@ -66,22 +66,40 @@
         }).catch(() => {});
     }
 
-    let text = "Hello, I am sentient";
-    let audioSrc = "";
+    let textToSpeak = "Hello, I am sentient";
+    let voices = [];
 
-    async function speak() {
-        const res = await fetch("http://<raspberry-pi-ip>:5000/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-        });
-        if (!res.ok) {
-        console.error("TTS request failed");
+    // Load voices once they become available
+    function loadVoices() {
+        voices = window.speechSynthesis.getVoices();
+        if (!voices.length) {
+        window.speechSynthesis.onvoiceschanged = () => {
+            voices = window.speechSynthesis.getVoices();
+        };
+        }
+    }
+
+    function speakText() {
+        if (!('speechSynthesis' in window)) {
+        alert("Text-to-speech not supported in this browser.");
         return;
         }
-        const blob = await res.blob();
-        audioSrc = URL.createObjectURL(blob);
+
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+        // Pick a default English voice if available
+        const voice = voices.find(v => v.lang.startsWith("en")) || voices[0];
+        if (voice) utterance.voice = voice;
+
+        utterance.rate = 1;   // speed (0.1–10)
+        utterance.pitch = 1;  // pitch (0–2)
+        utterance.volume = 1; // volume (0–1)
+
+        window.speechSynthesis.speak(utterance);
     }
+
+    // Load voices on component mount
+    loadVoices();
 
      // Filters
     let fromTime = '';
@@ -327,7 +345,7 @@
                             <button on:click={updateDevice} disabled={loading} class="update-btn">
                                 Update & Restart
                             </button>
-                            <button on:click={speak}>Speak</button>
+                            <button class="update-btn" on:click={speak}>Speak</button>
 
                             <h2>LCD Controls</h2>
                             <div class="lcd-controls">
