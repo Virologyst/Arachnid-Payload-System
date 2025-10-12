@@ -698,7 +698,7 @@ def get_targets():
     data = target_system.get_gauge_pressure()
 
     dets = [
-        {
+        str({
             "type": str(det.type.value),
             "confidence": float(det.confidence),
             "x": float(det.x),
@@ -706,7 +706,9 @@ def get_targets():
             "width": float(det.width),
             "height": float(det.height),
             "angle": det.angle if det.angle is not None else "None",
-        }
+            "location": det.location if det.location is not None else "None",
+            "id": int(det.id) if det.id is not None else "None"
+            })
         for det in detections
     ]
 
