@@ -118,7 +118,7 @@ last_detections = {DetectionType.AruCo: {}, DetectionType.ValveClosed: time.time
 import time
 import uuid
 saved_image_last = time.time()
-def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
+def draw_detections(frame: np.ndarray, dets: list[Detection], logger) -> np.ndarray:
     """
     dets: list of Detection objects
     frame: BGR HxWx3 (draws in-place)
@@ -205,7 +205,7 @@ class TargetDetectionInterface:
       - start()/stop(): manage background producer
       - get_image_bytes()/get_detections(): thread-safe access to latest
     """
-    def __init__(self, cb: Optional[Callable[[], None]] = None, 
+    def __init__(self, logger, cb: Optional[Callable[[], None]] = None, 
     camera_calibration_parameters_filename:Path=Path(__file__).parent / "calibration_chessboard.yaml"):
         self.new_image_cb: Optional[Callable[[], None]] = cb
         self._lock = threading.Lock()
@@ -214,6 +214,8 @@ class TargetDetectionInterface:
         self._latest_image: Optional[np.ndarray] = None
         self._thr: Optional[threading.Thread] = None
         self._stop = threading.Event()
+
+        self.logger = logger
 
         cv_file = cv2.FileStorage(
             camera_calibration_parameters_filename, cv2.FILE_STORAGE_READ)
@@ -241,7 +243,7 @@ class TargetDetectionInterface:
             dets.extend(self._latest_detections)
             dets.extend(aruco_dets)
             if draw_detections_flag and len(dets) > 0:
-                frame = draw_detections(frame, dets)
+                frame = draw_detections(frame, dets, logger)
                 if encode:
                     return self._encode_np_bgr_to_mjpeg(frame)
                 return frame
