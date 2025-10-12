@@ -46,6 +46,11 @@ from gpiozero import AngularServo
 from gpiozero import Device
 from gpiozero.pins.lgpio import LGPIOFactory
 
+# --- Text to Speech --- 
+from gtts import gTTS
+import io
+from flask_cors import CORS
+
 Device.pin_factory = LGPIOFactory()
 sys.stdout.reconfigure(line_buffering=True)
 
@@ -572,6 +577,28 @@ def logs_endpoint():
         handler.flush()
 
     return jsonify({"status": "ok"})
+
+@app.route("/api/tts", methods=["POST"])
+def tts():
+    data = request.get_json()
+    text = "Hello, I am sentient"#data.get("text", "")
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+
+    try:
+        tts = gTTS(text=text, lang="en", slow=False)
+        audio_bytes = io.BytesIO()
+        tts.write_to_fp(audio_bytes)
+        audio_bytes.seek(0)
+
+        return send_file(
+            audio_bytes,
+            mimetype="audio/mpeg",
+            as_attachment=False,
+            download_name="speech.mp3"
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/")
 def serve_index():

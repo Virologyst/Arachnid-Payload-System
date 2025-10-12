@@ -25,7 +25,7 @@ class Point3D:
     z: float
 
     def __repr__(self):
-        return (f"({self.x},{self.y},{self.z})")
+        return (f"({float(self.x):.2f},{float(self.y):.2f},{float(self.z):.2f})")
 
 @dataclass 
 class Detection:
@@ -112,13 +112,14 @@ def get_aruco_markers(frame: np.ndarray, detector,
 
     return aruco_dets
 
-last_detections = {DetectionType.AruCo: {}, DetectionType.ValveClosed: time.now(), 
-    DetectionType.ValveOpen: time.now(), DetectionType.NeedleCenter: time.now()}
+last_detections = {DetectionType.AruCo: {}, DetectionType.ValveClosed: time.time(), 
+    DetectionType.ValveOpen: time.time(), DetectionType.NeedleCenter: time.time()}
 
 import time
 import uuid
-saved_image_last = time.now()
-def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
+import datetime
+saved_image_last = time.time()
+def draw_detections(frame: np.ndarray, dets: list[Detection], logger) -> np.ndarray:
     """
     dets: list of Detection objects
     frame: BGR HxWx3 (draws in-place)
@@ -126,7 +127,8 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
     repeat_delay = 5
     global last_detections
     global saved_image_last
-    now = time.now()
+    now = time.time()
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     H, W = frame.shape[:2]
     gauge_detected = False
@@ -162,19 +164,23 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
         cv2.rectangle(frame, (bx, by), (bx + tw + 6, by + th_text + 6), color, -1)
         cv2.putText(frame, text, (bx + 3, by + th_text + 1),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
-        if name == 'valve_closed' of name == 'valve_open':
+        if name == 'valve_closed' or name == 'valve_open':
             if (now - last_detections[det.type]) > repeat_delay:
-                message = "[TAIP] Open valve detected" if name == "valve_open" else "[TAIP] Closed valve detected"
-                logging.info(message)
+                message = f"({now_str}) [TARGET] Open valve detected" if name == "valve_open" else f"({now_str}) [TARGET] Closed valve detected"
+                logger.append(message)
+                print(message)
                 last_detections[det.type] = now
         if name == 'AruCo':
-            message = f"[TAIP] AruCo marker {det.id} detected, Position {det.location.x:.2f},{det.location.y:.2f},{det.location.z:.2f}"
+            det.id = int(det.id)
+            message = f"({now_str}) [TARGET] AruCo marker {det.id} detected, Position {float(det.location.x):.2f},{float(det.location.y):.2f},{float(det.location.z):.2f}"
             if det.id in last_detections[det.type].keys():
                 if (now - last_detections[det.type][det.id]) > repeat_delay:
-                    logging.info(message)
+                    logger.append(message)
+                    print(message)
                     last_detections[det.type][det.id] = now
             else:
-                logging.info(message)
+                logger.append(message)
+                print(message)
                 last_detections[det.type][det.id] = now
 
 
@@ -189,12 +195,12 @@ def draw_detections(frame: np.ndarray, dets: list[Detection]) -> np.ndarray:
         cid = LABELS.index(needle_tip.type.value)
         color = _color(cid)
         cv2.line(frame,  needle_centre_centre, needle_tip_centre, color, 1, cv2.LINE_AA)
-        if now - last_detections['needle_centre']:
-            logging.info(f"[TAIP] Gauge detected")
+        if now - last_detections[DetectionType.NeedleCenter]:
+            logger.append(f"({now_str}) [TARGET] Gauge detected")
 
     if len(dets) > 0 and ((now - saved_image_last) > repeat_delay):
-        cv2.imwrite(f"/home/egh455-g5/DCIM/{uuid.uuid4()}.png", frame)
-        saved_last_image = now
+        cv2.imwrite(f"/home/egh455-g5/DCIM/{uuid.uuid4()}.jpg", frame)
+        saved_image_last = now
 
     return frame
 
@@ -205,7 +211,7 @@ class TargetDetectionInterface:
       - start()/stop(): manage background producer
       - get_image_bytes()/get_detections(): thread-safe access to latest
     """
-    def __init__(self, cb: Optional[Callable[[], None]] = None, 
+    def __init__(self, logger, cb: Optional[Callable[[], None]] = None, 
     camera_calibration_parameters_filename:Path=Path(__file__).parent / "calibration_chessboard.yaml"):
         self.new_image_cb: Optional[Callable[[], None]] = cb
         self._lock = threading.Lock()
@@ -221,6 +227,8 @@ class TargetDetectionInterface:
         self.dst = cv_file.getNode('D').mat()
         cv_file.release()
 
+        self.logger = logger
+
         self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
         self.parameters = cv2.aruco.DetectorParameters()
         self.detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.parameters)
@@ -235,13 +243,12 @@ class TargetDetectionInterface:
     def get_image_bytes(self, draw_detections_flag: bool = True, encode=True) -> bytes | None:  # cv2.imencode output
         with self._lock:
             frame = self._latest_image
-            print(self._latest_detections)
             aruco_dets = get_aruco_markers(frame, self.detector, self.mtx, self.dst)
             dets = []
             dets.extend(self._latest_detections)
             dets.extend(aruco_dets)
             if draw_detections_flag and len(dets) > 0:
-                frame = draw_detections(frame, dets)
+                frame = draw_detections(frame, dets, self.logger)
                 if encode:
                     return self._encode_np_bgr_to_mjpeg(frame)
                 return frame

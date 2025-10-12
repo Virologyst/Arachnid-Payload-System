@@ -66,6 +66,23 @@
         }).catch(() => {});
     }
 
+    let text = "Hello, I am sentient";
+    let audioSrc = "";
+
+    async function speak() {
+        const res = await fetch("http://<raspberry-pi-ip>:5000/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+        });
+        if (!res.ok) {
+        console.error("TTS request failed");
+        return;
+        }
+        const blob = await res.blob();
+        audioSrc = URL.createObjectURL(blob);
+    }
+
      // Filters
     let fromTime = '';
     let toTime = '';
@@ -307,9 +324,10 @@
                     {:else if currentView === 'system'}
                         <div>
                             <h2>System Controls</h2>
-                           <button on:click={updateDevice} disabled={loading} class="update-btn">
+                            <button on:click={updateDevice} disabled={loading} class="update-btn">
                                 Update & Restart
                             </button>
+                            <button on:click={speak}>Speak</button>
 
                             <h2>LCD Controls</h2>
                             <div class="lcd-controls">
@@ -319,7 +337,9 @@
                                 <button class="update-btn" on:click={() => fetch('/lcd/show/liveDetections', {method: 'POST'})}>Show Live Detections</button>
                                 <button class="update-btn" on:click={() => fetch('/lcd/show/temperature', {method: 'POST'})}>Show Temperature</button>
                             </div>
-
+                            {#if audioSrc}
+                                <audio src={audioSrc} controls autoplay></audio>
+                            {/if}
                             {#if loading}
                                 <div id="loading">
                                     <img src="loading.gif" alt="Loading..." style="width: 50px;">
@@ -426,4 +446,3 @@
             {/if}
     </div>
 </main>
-
