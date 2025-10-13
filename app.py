@@ -120,9 +120,9 @@ def drill_sequence():
     try:
         print("Starting drill sequence...")
         servo.value = +1.0     # full speed
-        time.sleep(29)
+        time.sleep(27)
         servo.value = -1.0     # reverse (if desired)
-        time.sleep(29)
+        time.sleep(27)
         servo.value = 0.0      # stop (still holding)
         time.sleep(0.5)
     finally:
