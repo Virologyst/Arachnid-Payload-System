@@ -5,7 +5,7 @@ Fresh Pi 5 -> payload running. This is what was done on the current Pi (2026-10-
 | | |
 |---|---|
 | Hostname / IP | `arachnid` / 192.168.0.162 (DHCP - reserve it in the router) |
-| User | `virologyst` (passwordless sudo) |
+| User | `virologyst` (passwordless sudo via `/etc/sudoers.d/010_virologyst-nopasswd`, added 2026-10-16) |
 | OS | Raspberry Pi OS 64-bit, **Debian 13 Trixie**, kernel 6.18, Python 3.13 |
 | Hardware | Pi 5 8 GB, 256 GB SD card |
 | Repo | `~/Arachnid-Payload-System`, venv in `.venv` |
@@ -62,8 +62,10 @@ sudo raspi-config nonint do_spi 0      # Enviro+ LCD
 Power check, any time: `vcgencmd get_throttled` should print `throttled=0x0`. Anything else means
 undervoltage or overheating.
 
-Only with a supply that really gives 5 A: add `usb_max_current_enable=1` to `/boot/firmware/config.txt`
-(otherwise the Pi 5 limits USB to 600 mA total - the OAK can brown out).
+**On battery (buck converter) power, `usb_max_current_enable=1` in `/boot/firmware/config.txt` is required**
+(set on this Pi 2026-10-16). A buck can't negotiate USB-PD, so the Pi assumes 3 A and limits USB to 600 mA
+total - the OAK then resets every few seconds (`X_LINK_ERROR` in the log, video stalls). Only set it if the
+supply really gives 5 A. Check: `vcgencmd pmic_read_adc EXT5V_V` - aim for 5.1 V under load (4.96 V seen).
 
 Enviro+ check: `i2cdetect -y 1` should show 0x23 (LTR559), 0x49 (ADS1015 gas) and 0x76 (BME280).
 
@@ -103,9 +105,17 @@ cd .. && rm -rf static && cp -r interface/build static
 
 ## 8. Run
 
+Runs as a systemd service, started on boot (unit file in the repo: `deploy/payload.service`):
+
 ```bash
-cd ~/Arachnid-Payload-System && source .venv/bin/activate && python app.py
+sudo install -m 644 ~/Arachnid-Payload-System/deploy/payload.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now payload
 ```
+
+Day to day: `sudo systemctl restart payload` (after a `git pull`), `systemctl status payload`,
+`journalctl -u payload -f` (live log). Settings below go in the unit as `Environment=` lines.
+To run it by hand instead, stop the service first, then
+`cd ~/Arachnid-Payload-System && .venv/bin/python app.py`.
 
 The app starts without the OAK (dummy detections - a colour-cycling test image) or the Enviro+
 (`/enviro` returns 503). The startup log says which hardware it found.

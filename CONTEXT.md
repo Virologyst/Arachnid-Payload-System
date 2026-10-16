@@ -89,7 +89,11 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
       charge-only
 - [ ] Enviro+ LCD on the Pi 5: with SPI on, the ST7735 driver couldn't claim GPIO9 (DC pin, also SPI0
       MISO) - check when the Enviro+ is fitted (Pimoroni's Pi 5 notes)
-- [ ] Build payload power supply (5 V / 5 A buck from 18 V, set 5.1-5.2 V; Pi peak ~2.5 A + OAK ~1 A); mount on the robot
+- [x] Payload on battery power (2026-10-16): `usb_max_current_enable=1` set - without it the OAK reset every
+      ~4 s (600 mA USB limit). Supply reads 4.96-4.99 V - turn the buck up to 5.1-5.2 V
+- [x] Starts on boot: systemd `payload.service` (`deploy/payload.service`)
+- [ ] Backup: Luxonis OAK Y-adapter (powers the OAK separately) - no AU stockist found; Luxonis shop / Arducam
+- [ ] Payload power supply final build (5 V / 5 A buck from 18 V, set 5.1-5.2 V; Pi peak ~2.5 A + OAK ~1 A); mount on the robot
 - [ ] Trim `requirements.txt` (currently a full system `pip freeze`)
 - [x] Robot control from the dashboard (arrow keys, stand/sit, stop) - fake-console tested 2026-10-16
 - [ ] First drive of the real robot from the dashboard (user present, robot clear, legs-up first)
@@ -102,4 +106,4 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
 
 ## Next step
 
-First real drive from the dashboard; auto-start the app on boot (systemd); payload power supply.
+First real drive from the dashboard (robot on its stand or area clear); buck voltage to 5.1-5.2 V.

@@ -1,0 +1,18 @@
+# Project Arachnid payload - Flask dashboard on :8080. Install: see docs/pi-setup.md ("Start on boot").
+[Unit]
+Description=Project Arachnid payload (dashboard, camera, robot link)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=virologyst
+WorkingDirectory=/home/virologyst/Arachnid-Payload-System
+ExecStart=/home/virologyst/Arachnid-Payload-System/.venv/bin/python app.py
+Environment=PYTHONUNBUFFERED=1
+# Payload settings (see docs/pi-setup.md), e.g.:
+# Environment=PAYLOAD_DRILL=1
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
