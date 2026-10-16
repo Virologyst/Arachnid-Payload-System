@@ -26,6 +26,7 @@ from flask import (
 
 from target_detection.interface import TargetDetectionDummy
 from target_detection.inference import TargetDetection
+from robot_link import RobotLink
 
 # --- Enviro+ sensors ---
 from smbus2 import SMBus
@@ -61,6 +62,8 @@ app = Flask(__name__, static_folder="static", static_url_path="")
 DRILL_ENABLED = os.environ.get("PAYLOAD_DRILL", "0") == "1"
 DRILL_AUTO = DRILL_ENABLED and os.environ.get("PAYLOAD_DRILL_AUTO", "0") == "1"
 IMAGE_DIR = os.path.expanduser(os.environ.get("PAYLOAD_IMAGE_DIR", "~/DCIM"))
+ROBOT_HOST = os.environ.get("PAYLOAD_ROBOT_HOST", "huntsman.local")
+ROBOT_PORT = int(os.environ.get("PAYLOAD_ROBOT_PORT", "23"))
 DEPLOY_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "deploy.sh")
 
 # ───── Logging Setup ─────
@@ -539,6 +542,42 @@ def lcd_loop_thread():
 # Start LCD Thread
 if disp is not None:
     Thread(target=lcd_loop_thread, daemon=True).start()
+
+# ──────────────── ROBOT CONTROL (Huntsman console) ────────────────
+# Arm from the dashboard to connect; arrow keys drive while held; stop is always allowed.
+robot = RobotLink(ROBOT_HOST, ROBOT_PORT, log=lambda msg: app.logger.info(msg))
+
+def _robot_reply(fn):
+    try:
+        fn()
+        return jsonify({"ok": True, **robot.state()})
+    except PermissionError as e:
+        return jsonify({"ok": False, "error": str(e), **robot.state()}), 403
+    except (ValueError, RuntimeError, OSError) as e:
+        return jsonify({"ok": False, "error": str(e), **robot.state()}), 409
+
+@app.route("/robot")
+def robot_state():
+    return jsonify(robot.state())
+
+@app.route("/robot/arm", methods=["POST"])
+def robot_arm():
+    armed = bool((request.get_json(silent=True) or {}).get("armed"))
+    return _robot_reply(robot.arm if armed else robot.disarm)
+
+@app.route("/robot/drive", methods=["POST"])
+def robot_drive():
+    direction = (request.get_json(silent=True) or {}).get("dir", "")
+    return _robot_reply(lambda: robot.drive(direction))
+
+@app.route("/robot/stop", methods=["POST"])
+def robot_stop():
+    return _robot_reply(robot.stop)
+
+@app.route("/robot/pose", methods=["POST"])
+def robot_pose():
+    name = (request.get_json(silent=True) or {}).get("pose", "")
+    return _robot_reply(lambda: robot.pose(name))
 
 # ──────────────── ROUTES ────────────────
 @app.route('/drill', methods=['POST'])

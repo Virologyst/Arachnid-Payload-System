@@ -1,5 +1,6 @@
 <script>
     import { onMount } from 'svelte';
+    import RobotControl from '$lib/RobotControl.svelte';
 
     let backendLogs = [];
     let status = "unknown";
@@ -278,6 +279,8 @@
 
             <!-- Dynamic Panel -->
             <div class="panel-pane">
+
+                <RobotControl />
 
                 <div class="tab-buttons">
 <!--                    <button on:click={() => loadPanel('sensors')}>Graph</button>-->

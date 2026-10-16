@@ -45,6 +45,17 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
   - Never send bytes during a move except to stop (any byte aborts a move on the robot).
   - The text console is fine to start; a structured protocol (JSON lines or a second port) would be a
     Huntsman firmware change - plan it on both sides when control becomes real.
+- **Dashboard drives the robot (built 2026-10-16, user request): hold-to-move with a dead-man watchdog.**
+  `robot_link.py` + `/robot`, `/robot/arm`, `/robot/drive`, `/robot/stop`, `/robot/pose`; UI in
+  `interface/src/lib/RobotControl.svelte`. Why this shape:
+  - **Arm toggle** (off on every page load) connects to the console; disarm disconnects, freeing it for
+    the PlatformIO monitor (one client only).
+  - Hold an arrow key / pad button -> `walk` / `back` / `turn left|right` (no count = until a byte).
+    The browser re-sends the direction every 200 ms; **no heartbeat for 700 ms -> stop** (key up, tab
+    hidden, window blur, network loss). Space / Esc / STOP always stop.
+  - The robot flushes input on a stop, so a change of direction sends stop, waits for `Stopped`, then the
+    new command; drive is refused while `stand` / `sit` run (any byte would abort them).
+  - Tested against a fake console (localhost); **not yet on the real robot**.
 
 ## Power (proposed, not built)
 
@@ -80,14 +91,15 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
       MISO) - check when the Enviro+ is fitted (Pimoroni's Pi 5 notes)
 - [ ] Build payload power supply (5 V / 5 A buck from 18 V, set 5.1-5.2 V; Pi peak ~2.5 A + OAK ~1 A); mount on the robot
 - [ ] Trim `requirements.txt` (currently a full system `pip freeze`)
-- [ ] Robot-link module: connect to huntsman.local:23, read `status`, show it on the dashboard (read-only)
+- [x] Robot control from the dashboard (arrow keys, stand/sit, stop) - fake-console tested 2026-10-16
+- [ ] First drive of the real robot from the dashboard (user present, robot clear, legs-up first)
+- [x] Dashboard title: "Project Arachnid: Huntsman PL01 - Ultrasonic Thickness"
 - [ ] Check video and detection while the robot walks (vibration, motion blur)
 
 ## Open questions
 
-- Robot control: which commands, and from where (dashboard buttons, detection-driven)?
+- Robot control beyond the dashboard (detection-driven moves)? Structured protocol / second console port on Huntsman?
 
 ## Next step
 
-Pi setup ([docs/pi-setup.md](docs/pi-setup.md)), then disable the drill by default and add the read-only
-robot-link module.
+First real drive from the dashboard; auto-start the app on boot (systemd); payload power supply.

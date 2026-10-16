@@ -115,6 +115,8 @@ The app starts without the OAK (dummy detections - a colour-cycling test image) 
 | `PAYLOAD_DRILL` | `0` | `1` = drill fitted: GPIO13 servo set up, `/drill` works |
 | `PAYLOAD_DRILL_AUTO` | `0` | `1` (with `PAYLOAD_DRILL=1`) = drill runs automatically when gauge pressure averages < 2 bar |
 | `PAYLOAD_IMAGE_DIR` | `~/DCIM` | where `/capture` saves images |
+| `PAYLOAD_ROBOT_HOST` | `huntsman.local` | robot console host (dashboard driving) |
+| `PAYLOAD_ROBOT_PORT` | `23` | robot console port |
 
 `/update` runs `deploy.sh` from the repo root if one exists.
 

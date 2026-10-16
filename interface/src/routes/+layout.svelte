@@ -5,6 +5,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+	<title>Project Arachnid: Huntsman PL01 - Ultrasonic Thickness</title>
 </svelte:head>
 
 <header class="navbar">
@@ -12,7 +13,7 @@
 		<a href="/" class="logo-link">
 			<img src="/logo.png" alt="Home" class="logo" />
 		</a>
-		<h1 style="margin-left: 25px">EGH455: Advanced System Design - Group 5</h1>
+		<h1 style="margin-left: 25px">Project Arachnid: Huntsman PL01 - Ultrasonic Thickness</h1>
 	</div>
 
 	<nav class="nav">
