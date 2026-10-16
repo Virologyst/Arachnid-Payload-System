@@ -151,7 +151,7 @@
         <button disabled={!state.armed || state.moving || state.pose_busy} on:click={() => post('/robot/pose', { pose: 'sit' })}>Sit</button>
     </div>
 
-    <p class="hint">Arm, then hold the arrow keys to move. Space / Esc = stop.</p>
+    <p class="hint">Arm, then hold an arrow (button or arrow key) to move - release to stop. Space / Esc = stop.</p>
 
     {#if error}<p class="error">{error}</p>{/if}
 
