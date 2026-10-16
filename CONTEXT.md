@@ -73,10 +73,9 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
       `/capture` work. OAK and Enviro+ are optional (dummy detector / 503); fixed the stale dummy detector
 - [x] Hard-coded EGH455 paths removed (`PAYLOAD_IMAGE_DIR`, default `~/DCIM`; `/update` uses repo `deploy.sh`)
 - [x] Drill off by default: `PAYLOAD_DRILL=1` enables it, `PAYLOAD_DRILL_AUTO=1` the < 2 bar auto-drill
-- [x] depthai-nodes pinned to 0.4.0 (`ImgDetectionsBridge` removed in 0.5)
-- [ ] OAK not detected: the Pi logs no USB event at all when it's plugged in - likely a charge-only USB-C
-      cable. Try a known data (ideally USB 3) cable. No Y-adapter needed: the Pi reports a 5 A supply and
-      `usb_max_current_enable` = 1 (1.6 A on USB); OAK-D Lite (no IR) needs ~1 A
+- [x] depthai-nodes pinned to 0.3.7 (`ImgDetectionsBridge` removed in 0.5, its `setLabelEncoding` in 0.4)
+- [x] OAK-D Lite running on the Pi (2026-10-16), USB 3 (5 Gbps), real detection pipeline - earlier cables were
+      charge-only
 - [ ] Enviro+ LCD on the Pi 5: with SPI on, the ST7735 driver couldn't claim GPIO9 (DC pin, also SPI0
       MISO) - check when the Enviro+ is fitted (Pimoroni's Pi 5 notes)
 - [ ] Build payload power supply (5 V / 5 A buck from 18 V, set 5.1-5.2 V; Pi peak ~2.5 A + OAK ~1 A); mount on the robot
