@@ -81,7 +81,9 @@ if os.path.exists(LOG_FILE):
     with open(LOG_FILE, "r") as f:
         lines = f.readlines()[-1000:]  # only keep latest 1000 lines
         for line in lines:
-            LOG_BUFFER.append(line.strip())
+            line = line.replace("\0", "").strip()   # power loss mid-write leaves NUL runs in the file
+            if line:
+                LOG_BUFFER.append(line)
 
 class FrontendBufferHandler(logging.Handler):
     def emit(self, record):

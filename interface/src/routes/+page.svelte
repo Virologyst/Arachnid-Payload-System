@@ -24,13 +24,13 @@
             } else if (typeof data === 'object') {
                 for (const [k, v] of Object.entries(data)) {
                     log(`${k}: ${v}`, 'TARGET');
-                    log(`Detections something ${target}`, 'TARGET');
                     if(k == "detections") {
-                        log(`Detections something ${target}`, 'TARGET');
                         //v list of str
                         v.forEach(target => {
-                            target_type = JSON.parse(target);
-                            const utterance = new SpeechSynthesisUtterance(target_type.type);
+                            // Python str(dict) (single quotes), not JSON - take the type field directly
+                            const m = /'type':\s*'([^']+)'/.exec(target);
+                            if (!m) return;
+                            const utterance = new SpeechSynthesisUtterance(m[1]);
                             speechSynthesis.speak(utterance);
                         })
                     }
