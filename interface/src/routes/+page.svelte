@@ -229,6 +229,15 @@
         return () => window.removeEventListener("resize", checkMobile);
     });
 
+    // Phones hide the side panel, so the robot controls get their own toggle (remembered per device)
+    let showRobot = false;
+    try { showRobot = localStorage.getItem('showRobot') === '1'; } catch (e) { /* no storage */ }
+
+    function toggleRobot() {
+        showRobot = !showRobot;
+        try { localStorage.setItem('showRobot', showRobot ? '1' : '0'); } catch (e) { /* no storage */ }
+    }
+
     function toggleMobileMenu() {
         mobileMenuOpen = !mobileMenuOpen;
     }
@@ -249,6 +258,19 @@
 <style>
 
     @import '../../styling.css';
+
+    .robot-mobile { padding: 10px 12px 0; }
+    .robot-toggle {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: none;
+        border-radius: 6px;
+        background: #1f3b5c;
+        color: #fff;
+        font-size: 1rem;
+        text-align: left;
+    }
 
 </style>
 
@@ -280,7 +302,7 @@
             <!-- Dynamic Panel -->
             <div class="panel-pane">
 
-                <RobotControl />
+                {#if !isMobile}<RobotControl />{/if}
 
                 <div class="tab-buttons">
 <!--                    <button on:click={() => loadPanel('sensors')}>Graph</button>-->
@@ -370,6 +392,13 @@
         </div>
 
         {#if isMobile}
+
+            <div class="robot-mobile">
+                <button class="robot-toggle" on:click={toggleRobot}>
+                    {showRobot ? '▾ Hide robot controls' : '▸ Show robot controls'}
+                </button>
+                {#if showRobot}<RobotControl />{/if}
+            </div>
 
             <div class="bottom-row">
 

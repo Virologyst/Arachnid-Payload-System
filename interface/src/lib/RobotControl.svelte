@@ -130,19 +130,19 @@
         {status} <span class="host">{state.host}</span>
     </div>
 
-    <div class="pad" class:disabled={!state.armed}>
+    <div class="pad" class:disabled={!state.armed} on:contextmenu|preventDefault>
         <span></span>
         <button class:active={held === 'forward'} disabled={!state.armed}
-                on:pointerdown={() => press('forward')} on:pointerup={release} on:pointerleave={release}>▲</button>
+                on:pointerdown={() => press('forward')} on:pointerup={release} on:pointerleave={release} on:pointercancel={release}>▲</button>
         <span></span>
         <button class:active={held === 'left'} disabled={!state.armed}
-                on:pointerdown={() => press('left')} on:pointerup={release} on:pointerleave={release}>◀</button>
+                on:pointerdown={() => press('left')} on:pointerup={release} on:pointerleave={release} on:pointercancel={release}>◀</button>
         <button class="stop" on:click={stop}>STOP</button>
         <button class:active={held === 'right'} disabled={!state.armed}
-                on:pointerdown={() => press('right')} on:pointerup={release} on:pointerleave={release}>▶</button>
+                on:pointerdown={() => press('right')} on:pointerup={release} on:pointerleave={release} on:pointercancel={release}>▶</button>
         <span></span>
         <button class:active={held === 'back'} disabled={!state.armed}
-                on:pointerdown={() => press('back')} on:pointerup={release} on:pointerleave={release}>▼</button>
+                on:pointerdown={() => press('back')} on:pointerup={release} on:pointerleave={release} on:pointercancel={release}>▼</button>
         <span></span>
     </div>
 
@@ -203,6 +203,12 @@
     .poses button:disabled { opacity: 0.35; cursor: not-allowed; }
     .hint { font-size: 0.8rem; opacity: 0.7; text-align: center; margin: 8px 0 4px; }
     .error { color: #ff6b6b; font-size: 0.85rem; margin: 4px 0; }
+    @media (max-width: 768px) {
+        .pad { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 64px); }
+        .pad button { font-size: 1.6rem; -webkit-touch-callout: none; }
+        .poses button { padding: 10px 24px; font-size: 1rem; }
+        .arm input { width: 24px; height: 24px; }
+    }
     .robot-log {
         font-family: monospace; font-size: 0.75rem; opacity: 0.8;
         max-height: 110px; overflow-y: auto; margin-top: 6px;
