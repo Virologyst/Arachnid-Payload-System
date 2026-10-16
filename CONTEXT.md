@@ -51,6 +51,9 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
 - The ESP32 dev board's USB port is a power **input** (CH340 serial), and its 5 V buck is sized for the
   ESP32 only - neither can supply the Pi.
 - Load: Pi 5 ~3-8 W (wants 5 V / 5 A for full USB current), OAK ~2.5-5 W, Enviro+ small -> **5 V, 5 A** buck.
+- On the bench the official 27 W supply negotiates 5 A, so USB gets 1.6 A automatically. A buck converter
+  can't negotiate, so on the robot `usb_max_current_enable=1` **must** be in `/boot/firmware/config.txt`
+  or the OAK gets 600 mA and browns out.
 - Feed it straight from the **18 V battery** (wide-input buck, e.g. 9-36 V in), fused - not from the
   8.5 V servo rail (spikes, sag). Common ground with the robot is fine; isolation isn't needed.
 - Set `usb_max_current_enable=1` in `/boot/firmware/config.txt` only if the buck really gives 5 A;
@@ -66,13 +69,17 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
       I2C + SPI on, OAK udev rule, repo cloned, venv (depthai 3.11), dashboard built
       ([docs/pi-setup.md](docs/pi-setup.md))
 - [ ] Pi SSH keys-only (`00-auth.conf`) - user to apply (security setting)
-- [ ] First run: needs the OAK plugged in; Enviro+ not fitted yet (I2C bus empty). `app.py` currently
-      crashes without the OAK and expects the Enviro+ - make both optional (`TargetDetectionDummy` exists)
+- [x] First run on the Pi (2026-10-16) without OAK or Enviro+: dashboard, MJPEG stream (dummy), `/targets`,
+      `/capture` work. OAK and Enviro+ are optional (dummy detector / 503); fixed the stale dummy detector
+- [x] Hard-coded EGH455 paths removed (`PAYLOAD_IMAGE_DIR`, default `~/DCIM`; `/update` uses repo `deploy.sh`)
+- [x] Drill off by default: `PAYLOAD_DRILL=1` enables it, `PAYLOAD_DRILL_AUTO=1` the < 2 bar auto-drill
+- [x] depthai-nodes pinned to 0.4.0 (`ImgDetectionsBridge` removed in 0.5)
+- [ ] OAK not detected: the Pi logs no USB event at all when it's plugged in - likely a charge-only USB-C
+      cable. Try a known data (ideally USB 3) cable. No Y-adapter needed: the Pi reports a 5 A supply and
+      `usb_max_current_enable` = 1 (1.6 A on USB); OAK-D Lite (no IR) needs ~1 A
+- [ ] Enviro+ LCD on the Pi 5: with SPI on, the ST7735 driver couldn't claim GPIO9 (DC pin, also SPI0
+      MISO) - check when the Enviro+ is fitted (Pimoroni's Pi 5 notes)
 - [ ] Build payload power supply (5 V / 5 A buck from 18 V, set 5.1-5.2 V; Pi peak ~2.5 A + OAK ~1 A); mount on the robot
-- [ ] Fix hard-coded EGH455 paths in `app.py`: `IMAGE_DIR = "/home/egh455-g5/DCIM"`, `/update` runs
-      `/home/egh455-g5/EGH455/deploy.sh`
-- [ ] Drill disabled by default (config switch), auto-drill made opt-in (`drill_loop_thread` starts
-      unconditionally at import today)
 - [ ] Trim `requirements.txt` (currently a full system `pip freeze`)
 - [ ] Robot-link module: connect to huntsman.local:23, read `status`, show it on the dashboard (read-only)
 - [ ] Check video and detection while the robot walks (vibration, motion blur)

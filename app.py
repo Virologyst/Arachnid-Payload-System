@@ -55,6 +55,14 @@ sys.stdout.reconfigure(line_buffering=True)
 # ───── App Setup ─────
 app = Flask(__name__, static_folder="static", static_url_path="")
 
+# ───── Payload config (environment variables) ─────
+# Drill is off unless an attachment is fitted. PAYLOAD_DRILL=1 enables /drill;
+# PAYLOAD_DRILL_AUTO=1 also runs it automatically when gauge pressure averages below 2 bar.
+DRILL_ENABLED = os.environ.get("PAYLOAD_DRILL", "0") == "1"
+DRILL_AUTO = DRILL_ENABLED and os.environ.get("PAYLOAD_DRILL_AUTO", "0") == "1"
+IMAGE_DIR = os.path.expanduser(os.environ.get("PAYLOAD_IMAGE_DIR", "~/DCIM"))
+DEPLOY_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "deploy.sh")
+
 # ───── Logging Setup ─────
 from collections import deque
 import logging
@@ -95,10 +103,15 @@ app.logger.addHandler(file_handler)
 app.logger.addHandler(buffer_handler)
 app.logger.propagate = False
 
-# Initialize detection system
-target_system = TargetDetection(LOG_BUFFER)
-
-print("Initialized target system", flush=True)
+# Initialize detection system (falls back to the dummy if no OAK camera is connected)
+try:
+    target_system = TargetDetection(LOG_BUFFER)
+    CAMERA_OK = True
+    print("Initialized target system", flush=True)
+except Exception as e:
+    target_system = TargetDetectionDummy(LOG_BUFFER)
+    CAMERA_OK = False
+    print(f"OAK camera not available ({e}) - using dummy detections", flush=True)
 
 target_system.start()
 
@@ -108,15 +121,19 @@ target_system.start()
 # Note to Nicky - pressure plate detection target_system.get_gauge_pressure() - Lower limit 2 Bar. Needs low pass filter
 time.sleep(1)
 
-# Initialize Servo (GPIO pin 13)
-servo = AngularServo(
-    13,
-    min_angle=0, max_angle=360,
-    min_pulse_width=0.001, max_pulse_width=0.002,
-    initial_angle=None      # <- do nothing on construction
-)
+# Initialize Servo (GPIO pin 13) - only when a drill is fitted
+servo = None
+if DRILL_ENABLED:
+    servo = AngularServo(
+        13,
+        min_angle=0, max_angle=360,
+        min_pulse_width=0.001, max_pulse_width=0.002,
+        initial_angle=None      # <- do nothing on construction
+    )
 
 def drill_sequence():
+    if servo is None:
+        raise RuntimeError("Drill disabled (set PAYLOAD_DRILL=1 when a drill is fitted)")
     try:
         print("Starting drill sequence...")
         servo.value = +1.0     # full speed
@@ -165,8 +182,10 @@ def drill_loop_thread():
 
         time.sleep(READ_DELAY)
 
-# Start Drill Thread
-Thread(target=drill_loop_thread, daemon=True).start()
+# Start Drill Thread (auto-drill is opt-in)
+if DRILL_AUTO:
+    Thread(target=drill_loop_thread, daemon=True).start()
+print(f"Drill: {'enabled' if DRILL_ENABLED else 'disabled'}, auto: {'on' if DRILL_AUTO else 'off'}", flush=True)
 
 # ──────────────── Get IP ────────────────
 def get_ip():
@@ -185,12 +204,22 @@ def get_ip():
 
 time.sleep(1.0)  # Give it a sec
 
-# Initialise sensors (Same as examples)
-bme280 = BME280()
-ltr559 = LTR559()
+# Initialise sensors (Same as examples) - the payload still runs if the Enviro+ isn't fitted
+try:
+    bme280 = BME280()
+    bme280.get_temperature()
+    ltr559 = LTR559()
+    ENVIRO_OK = True
+except Exception as e:
+    bme280 = ltr559 = None
+    ENVIRO_OK = False
+    print(f"Enviro+ not detected ({e}) - sensor readings disabled", flush=True)
 gas_sensor = gas
 
+disp = None
 try:
+    if not ENVIRO_OK:
+        raise RuntimeError("Enviro+ not detected")
 
     disp = st7735.ST7735(
         port=0,
@@ -206,14 +235,13 @@ try:
 
     print("Enviro+ and LCD initialised correctly.")
 
-except Exception as e:
+except (Exception, SystemExit) as e:   # gpiodevice calls sys.exit() when a pin is busy
     print("LCD init failed:", e)
     disp = None
 
 
 # ──────────────── DATABASE SETUP ────────────────
 DB_PATH = 'database/egh455.db'
-IMAGE_DIR = "/home/egh455-g5/DCIM"
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -437,7 +465,7 @@ def lcd_loop_thread():
     # The main loop
     try:
         while True:
-            proximity = ltr559.get_proximity()
+            proximity = ltr559.get_proximity() if ENVIRO_OK else 0
             mode = get_mode()
 
             # If the proximity crosses the threshold, toggle the mode
@@ -494,7 +522,7 @@ def lcd_loop_thread():
                     disp.display(frame_img)
 
             # ========== MODE 2: TEMPERATURE ==========
-            if mode == MODE_TEMP:
+            if mode == MODE_TEMP and ENVIRO_OK:
                 # variable = "temperature"
                 unit = "°C"
                 cpu_temp = get_cpu_temperature()
@@ -509,7 +537,8 @@ def lcd_loop_thread():
         print(f"[LCD LOOP ERROR] {e}")
 
 # Start LCD Thread
-Thread(target=lcd_loop_thread, daemon=True).start()
+if disp is not None:
+    Thread(target=lcd_loop_thread, daemon=True).start()
 
 # ──────────────── ROUTES ────────────────
 @app.route('/drill', methods=['POST'])
@@ -592,6 +621,8 @@ def video_feed():
 @app.route('/enviro')
 def get_enviro_data():
     """Read Enviro+ and return JSON."""
+    if not ENVIRO_OK:
+        return jsonify({"error": "Enviro+ not fitted"}), 503
     try:
         factor = 2.25
         cpu_temp = get_cpu_temperature()
@@ -644,8 +675,10 @@ def get_enviro_data():
 @app.route("/update", methods=["POST"])
 def update():
     """Trigger deploy script & restart service."""
+    if not os.path.exists(DEPLOY_SCRIPT):
+        return jsonify({"status": "error", "message": f"No deploy script at {DEPLOY_SCRIPT}"}), 404
     try:
-        subprocess.run(["/home/egh455-g5/EGH455/deploy.sh"], check=True)
+        subprocess.run([DEPLOY_SCRIPT], check=True)
         return jsonify({"status": "ok", "message": "Deployment triggered"})
     except subprocess.CalledProcessError as e:
         return jsonify({"status": "error", "message": str(e)}), 500

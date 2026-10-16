@@ -86,12 +86,13 @@ git clone https://github.com/Virologyst/Arachnid-Payload-System.git ~/Arachnid-P
 cd ~/Arachnid-Payload-System
 python3 -m venv --system-site-packages .venv     # keeps the Pi's own gpiozero / lgpio / picamera2
 source .venv/bin/activate
-pip install depthai depthai-nodes flask enviroplus pimoroni-bme280 ltr559 st7735 fonts font-roboto
+pip install depthai "depthai-nodes==0.4.0" flask enviroplus pimoroni-bme280 ltr559 st7735 fonts font-roboto
 ```
 
-depthai-nodes brings `opencv-python-headless` (4.10, includes `cv2.aruco`) - don't add another OpenCV
-package. Don't `pip install -r requirements.txt` - it is a whole-system `pip freeze` and won't install
-cleanly. Installed as of 2026-10-16: depthai 3.11.0.
+**depthai-nodes must stay at 0.4.0**: `target_detection/inference.py` uses `ImgDetectionsBridge`, which
+was removed in 0.5. depthai-nodes brings `opencv-python-headless` (4.10, includes `cv2.aruco`) - don't add
+another OpenCV package. Don't `pip install -r requirements.txt` - it is a whole-system `pip freeze` and
+won't install cleanly. Installed as of 2026-10-16: depthai 3.11.0, depthai-nodes 0.4.0.
 
 ## 7. Dashboard (web UI)
 
@@ -102,11 +103,19 @@ cd .. && rm -rf static && cp -r interface/build static
 
 ## 8. Run
 
-Before the first run, check the code fixes in CONTEXT.md (hard-coded `/home/egh455-g5` paths, drill
-auto-run, Enviro+/OAK missing).
-
 ```bash
 cd ~/Arachnid-Payload-System && source .venv/bin/activate && python app.py
 ```
+
+The app starts without the OAK (dummy detections - a colour-cycling test image) or the Enviro+
+(`/enviro` returns 503). The startup log says which hardware it found.
+
+| Environment variable | Default | Meaning |
+|---|---|---|
+| `PAYLOAD_DRILL` | `0` | `1` = drill fitted: GPIO13 servo set up, `/drill` works |
+| `PAYLOAD_DRILL_AUTO` | `0` | `1` (with `PAYLOAD_DRILL=1`) = drill runs automatically when gauge pressure averages < 2 bar |
+| `PAYLOAD_IMAGE_DIR` | `~/DCIM` | where `/capture` saves images |
+
+`/update` runs `deploy.sh` from the repo root if one exists.
 
 Open http://arachnid.local:8080 (or http://192.168.0.162:8080).

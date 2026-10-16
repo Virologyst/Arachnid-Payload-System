@@ -351,7 +351,9 @@ class TargetDetectionDummy(TargetDetectionInterface):
             y=150,
             width=50,
             height=50,
-            angle=math.sin(time.monotonic() / 20.0) # Simulate a changing angle
+            angle=math.sin(time.monotonic() / 20.0), # Simulate a changing angle
+            location=None,
+            id=0                # ArUco detections need a marker id (draw_detections)
         )
         return [mock_detection]
     
