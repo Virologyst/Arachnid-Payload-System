@@ -55,7 +55,7 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
     hidden, window blur, network loss). Space / Esc / STOP always stop.
   - The robot flushes input on a stop, so a change of direction sends stop, waits for `Stopped`, then the
     new command; drive is refused while `stand` / `sit` run (any byte would abort them).
-  - Tested against a fake console (localhost); **not yet on the real robot**.
+  - Tested against a fake console (localhost), then driven on the real robot by the user (2026-10-16).
 
 ## Power (proposed, not built)
 
@@ -96,7 +96,8 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
 - [ ] Payload power supply final build (5 V / 5 A buck from 18 V, set 5.1-5.2 V; Pi peak ~2.5 A + OAK ~1 A); mount on the robot
 - [ ] Trim `requirements.txt` (currently a full system `pip freeze`)
 - [x] Robot control from the dashboard (arrow keys, stand/sit, stop) - fake-console tested 2026-10-16
-- [ ] First drive of the real robot from the dashboard (user present, robot clear, legs-up first)
+- [x] First drive of the real robot from the dashboard (2026-10-16, user): walk, back, turn left / right - each
+      release stopped cleanly ("Stopped - standing.")
 - [x] Dashboard title: "Project Arachnid: Huntsman PL01 - Ultrasonic Thickness"
 - [ ] Check video and detection while the robot walks (vibration, motion blur)
 
@@ -106,4 +107,4 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
 
 ## Next step
 
-First real drive from the dashboard (robot on its stand or area clear); buck voltage to 5.1-5.2 V.
+Buck voltage to 5.1-5.2 V; check video and detection while walking; Enviro+ when fitted.
