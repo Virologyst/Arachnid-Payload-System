@@ -1,0 +1,23 @@
+#!/bin/bash
+# Payload Wi-Fi mode (one radio: home network OR hotspot).
+#   payload-wifi auto     - boot: home Wi-Fi if it connects within 30 s, otherwise the hotspot
+#   payload-wifi hotspot  - start the hotspot now (drops the home network - SSH over it goes too)
+#   payload-wifi home     - stop the hotspot, rejoin the home network
+#   payload-wifi status
+CON=arachnid-hotspot
+case "${1:-status}" in
+    auto)
+        for _ in $(seq 30); do
+            nmcli -t -f DEVICE,STATE device | grep -q '^wlan0:connected$' && exit 0
+            sleep 1
+        done
+        echo "Home Wi-Fi not found - starting the hotspot"
+        nmcli con up "$CON" ;;
+    hotspot) nmcli con up "$CON" ;;
+    home)
+        nmcli con down "$CON" 2>/dev/null
+        nmcli device wifi rescan 2>/dev/null; sleep 3
+        nmcli device connect wlan0 ;;
+    status) nmcli -t -f GENERAL.CONNECTION,IP4.ADDRESS device show wlan0 ;;
+    *) echo "usage: payload-wifi auto|hotspot|home|status"; exit 1 ;;
+esac

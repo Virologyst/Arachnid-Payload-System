@@ -69,6 +69,36 @@ supply really gives 5 A. Check: `vcgencmd pmic_read_adc EXT5V_V` - aim for 5.1 V
 
 Enviro+ check: `i2cdetect -y 1` should show 0x23 (LTR559), 0x49 (ADS1015 gas) and 0x76 (BME280).
 
+## 4b. Hotspot (field use) and captive portal
+
+One Wi-Fi radio: the Pi is **either** on the home network **or** runs the hotspot. At boot
+`payload-wifi.service` waits up to 30 s for the home Wi-Fi and otherwise starts the hotspot.
+
+| | |
+|---|---|
+| SSID | `Huntsman PL01` (2.4 GHz, channel 6, WPA2) - password: ask the user / NetworkManager on the Pi, never in git |
+| Pi address on the hotspot | `10.42.0.1` - dashboard http://10.42.0.1 (port 80 is forwarded to 8080) |
+| Robot | joins it as its second network (`WIFI_SSID_2` in Huntsman's git-ignored `secrets.h`); `huntsman.local` resolves over mDNS |
+
+One-time setup (from the repo on the Pi):
+
+```bash
+sudo bash deploy/hotspot/setup-hotspot.sh "Huntsman PL01" "<password>"
+```
+
+Switch by hand: `payload-wifi hotspot` / `payload-wifi home` / `payload-wifi status` (switching drops SSH
+over the network you leave - join the other network to reconnect).
+
+**Captive portal:** on the hotspot every DNS name resolves to the Pi (`address=/#/10.42.0.1` in
+NetworkManager's shared dnsmasq) and Flask redirects any foreign hostname to the dashboard, so a phone or
+laptop that joins pops up "Sign in to network" showing the dashboard. The pop-up is a limited browser - use
+its "open in browser" option for full use. Phones may report "no internet" and offer to switch back to
+mobile data: choose to stay connected.
+
+The robot only moves to the hotspot when it can't find the home network (it tries home first, then rotates).
+If the Pi is forced into hotspot mode at home, the robot stays on the home network and the dashboard can't
+reach it - restart the robot away from home Wi-Fi, or switch the Pi back with `payload-wifi home`.
+
 ## 5. OAK-D Lite
 
 Plug into a **blue USB 3** port with a USB 3 cable. Access for normal users:

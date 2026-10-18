@@ -1,0 +1,12 @@
+# Boot: join the home Wi-Fi if it's in range, otherwise start the payload hotspot (payload-wifi auto)
+[Unit]
+Description=Payload Wi-Fi mode (home network or hotspot)
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/payload-wifi auto
+
+[Install]
+WantedBy=multi-user.target

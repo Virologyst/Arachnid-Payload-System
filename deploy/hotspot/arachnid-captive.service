@@ -1,0 +1,12 @@
+[Unit]
+Description=Payload dashboard on port 80 (captive portal redirect to 8080)
+After=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/arachnid-captive.nft
+ExecStop=/usr/sbin/nft delete table ip arachnid_captive
+
+[Install]
+WantedBy=multi-user.target

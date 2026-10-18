@@ -21,7 +21,7 @@ import sqlite3
 from flask import (
     Flask, Response, jsonify,
     send_from_directory, render_template_string,
-    send_file, request
+    send_file, request, redirect
 )
 
 from target_detection.interface import TargetDetectionDummy
@@ -64,6 +64,20 @@ DRILL_AUTO = DRILL_ENABLED and os.environ.get("PAYLOAD_DRILL_AUTO", "0") == "1"
 IMAGE_DIR = os.path.expanduser(os.environ.get("PAYLOAD_IMAGE_DIR", "~/DCIM"))
 ROBOT_HOST = os.environ.get("PAYLOAD_ROBOT_HOST", "huntsman.local")
 ROBOT_PORT = int(os.environ.get("PAYLOAD_ROBOT_PORT", "23"))
+
+# ───── Captive portal (hotspot) ─────
+# On the hotspot every DNS name resolves to the Pi (deploy/hotspot). A phone joining it fetches a known URL
+# (connectivitycheck.gstatic.com, captive.apple.com, msftconnecttest.com...) to test for internet; answering
+# that with a redirect makes the OS open the dashboard as a "sign in to network" page.
+HOTSPOT_IP = "10.42.0.1"
+OWN_HOSTS = {"localhost", "arachnid", "arachnid.local", socket.gethostname(), socket.gethostname() + ".local"}
+
+@app.before_request
+def captive_portal():
+    host = request.host.split(":")[0].lower()
+    if host in OWN_HOSTS or host.replace(".", "").isdigit():   # our names, or any IP address
+        return None
+    return redirect(f"http://{HOTSPOT_IP}:8080/", code=302)
 DEPLOY_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "deploy.sh")
 
 # ───── Logging Setup ─────
