@@ -55,11 +55,13 @@
         logs = data.concat(logs).slice(-MAX_LOGS).reverse();
     }
 
-    let isMobile = false;
+    // Phone layout from the device/media width, decided before the first render. (innerWidth grows when the
+    // page content is wider than the phone, which then picked the desktop layout and made it wider still.)
+    const MOBILE_QUERY = '(max-width: 768px)';
+    let isMobile = typeof window !== 'undefined' && window.matchMedia(MOBILE_QUERY).matches;
 
     function checkMobile() {
-        console.log('isMobile: ', isMobile)
-        isMobile = window.innerWidth <= 768;
+        isMobile = window.matchMedia(MOBILE_QUERY).matches;
     }
 
     let logs = [];

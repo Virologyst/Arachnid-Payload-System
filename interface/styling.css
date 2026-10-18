@@ -547,6 +547,8 @@ main {
 
 .enviro-footer {
     flex: 1;
+    min-width: 0;              /* never forces the page wider (that broke the phone layout) */
+    overflow: hidden;
     padding: 12px 15px;
     font-size: 14px;
 }
@@ -555,6 +557,8 @@ main {
 .enviro-footer li { margin-bottom: 4px; }
 
 @media (max-width: 768px) {
+
+    .enviro-footer { display: none; }   /* phones have their own Enviro+ list */
 
     .sensor-overlay {
         display: none;
