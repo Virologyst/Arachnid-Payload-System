@@ -380,20 +380,6 @@
                     {/if}
                 </div>
 
-                <div class="enviro-card">
-                    <h2>Enviro+ Live Data</h2>
-                        <ul class="readings-list">
-                            <li>🌡 Temperature: {enviro.temperature} °C</li>
-                            <li>💧 Humidity: {enviro.humidity} %</li>
-                            <li>📈 Pressure: {enviro.pressure} hPa</li>
-                            <li>🟠 Oxidising Gas: {enviro.oxidising} kΩ</li>
-                            <li>🔵 Reducing Gas: {enviro.reducing} kΩ</li>
-                            <li>🟢 NH3: {enviro.nh3} kΩ</li>
-                            <li>💡 Light: {enviro.lux} lux</li>
-                            <li>📏 Proximity: {enviro.proximity}</li>
-                        </ul>
-                </div>
-
             </div>
         </div>
 
@@ -456,6 +442,21 @@
                                 <tr><td class="label">Gauge:</td><td class="status">{status}</td><td class="status">{value}</td></tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Enviro+ lives in the footer on desktop, so the side panel's logs get the height -->
+                    <div class="enviro-footer">
+                        <h3>Enviro+ Live Data</h3>
+                        <ul class="readings-list">
+                            <li>🌡 Temperature: {enviro.temperature} °C</li>
+                            <li>💧 Humidity: {enviro.humidity} %</li>
+                            <li>📈 Pressure: {enviro.pressure} hPa</li>
+                            <li>🟠 Oxidising Gas: {enviro.oxidising} kΩ</li>
+                            <li>🔵 Reducing Gas: {enviro.reducing} kΩ</li>
+                            <li>🟢 NH3: {enviro.nh3} kΩ</li>
+                            <li>💡 Light: {enviro.lux} lux</li>
+                            <li>📏 Proximity: {enviro.proximity}</li>
+                        </ul>
                     </div>
 
                     <div class="status-bars">

@@ -155,7 +155,7 @@ main {
 /* === CAMERA PANE === */
 
 .camera-pane {
-    flex: 3;                   /* was 2 - narrower side panel, bigger camera; no height cap, fills the row */
+    flex: 2.2;                 /* camera:panel - at 1080p the picture is height-limited, so wider is only black bars */
     min-width: 0;
     background: #000;
     display: flex;
@@ -350,6 +350,7 @@ main {
     bottom: 5px;
     /*right: 5px;*/
     width: 100%;
+    box-sizing: border-box;    /* padding inside the 100%, not past the camera's edge */
     display: flex;
     justify-content: right;
     pointer-events: none;
@@ -378,6 +379,7 @@ main {
 .drill-btn {
     width: 200px;
     pointer-events: auto;
+    margin-left: 10px;         /* off the screen edge on phones */
     margin-right: 10px;
     background-color: #5c5;
     color: black;
@@ -531,6 +533,27 @@ main {
 
 
 /* === RESPONSIVE DESIGN === */
+/* Desktop: header + camera row + footer fit exactly one screen. The row only gets the height left over
+   (min-height: 0 - otherwise the side panel's content stretches it and pushes the footer off); the side
+   panel scrolls inside itself when it doesn't fit. */
+@media (min-width: 769px) {
+    .content, .top-row { min-height: 0; }
+    .panel-pane { overflow-y: auto; }
+    /* Camera box = the 4:3 picture's own shape at the row's height (screen - 100 px header - 202 px footer),
+       so there are no black side bars; the side panel takes all the remaining width. */
+    .camera-pane { flex: 0 1 calc((100vh - 302px) * 4 / 3); }
+    .panel-pane { flex: 1 1 0; }
+}
+
+.enviro-footer {
+    flex: 1;
+    padding: 12px 15px;
+    font-size: 14px;
+}
+.enviro-footer h3 { margin: 0 0 8px; font-size: 1rem; }
+.enviro-footer .readings-list { columns: 2; column-gap: 24px; }
+.enviro-footer li { margin-bottom: 4px; }
+
 @media (max-width: 768px) {
 
     .sensor-overlay {
