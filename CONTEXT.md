@@ -33,6 +33,10 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
 - **Separate project from the robot firmware** - different language, device and release cycle; robot
   knowledge lives in [ROBOT.md](ROBOT.md) plus a pointer to the Huntsman repo.
 - **Enviro+ stays**; Enviro+ code stays as is.
+- **Field network = the Pi's hotspot** (user, 2026-10-18): `Huntsman PL01`, 2.4 GHz for the ESP32. One radio,
+  so at boot the Pi joins the home Wi-Fi if it's in range (SSH, git pull) and otherwise runs the hotspot.
+  Joining the hotspot opens the dashboard automatically (captive portal). WPA2, not open: anyone on the
+  network can drive the robot. The password lives only on the Pi and in Huntsman's git-ignored secrets.h.
 - **Drill code is kept but must be disabled by default** - no drill is fitted yet, but one may be added
   later. The inherited code **auto-runs the drill when gauge pressure averages below 2 bar**; on a robot that
   must become an explicit, opt-in action. Keep the drill behind a clear "attachment present / enabled" switch.
@@ -93,6 +97,8 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
       ~4 s (600 mA USB limit). Supply reads 4.96-4.99 V - turn the buck up to 5.1-5.2 V
 - [x] Starts on boot: systemd `payload.service` (`deploy/payload.service`)
 - [ ] Backup: Luxonis OAK Y-adapter (powers the OAK separately) - no AU stockist found; Luxonis shop / Arducam
+- [ ] Hotspot `Huntsman PL01` + captive portal (`deploy/hotspot`, written 2026-10-18): install on the Pi
+      when it's back online; Huntsman `secrets.h` has it as `WIFI_SSID_2` - OTA flash pending (user present)
 - [ ] Payload power supply final build (5 V / 5 A buck from 18 V, set 5.1-5.2 V; Pi peak ~2.5 A + OAK ~1 A); mount on the robot
 - [ ] Trim `requirements.txt` (currently a full system `pip freeze`)
 - [x] Robot control from the dashboard (arrow keys, stand/sit, stop) - fake-console tested 2026-10-16

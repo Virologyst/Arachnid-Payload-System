@@ -38,7 +38,8 @@ expect a new joint map and changed gait constants when it walks again.
 ## Talking to the robot
 
 The robot is on Wi-Fi as **`huntsman.local`** (seen at 192.168.0.108 on the home network). It also knows a
-second network (`WIFI_SSID_2`) - intended to be the **Pi's hotspot** for use in the field.
+second network (`WIFI_SSID_2`) - the **Pi's hotspot `Huntsman PL01`** (set 2026-10-18). It tries home
+first and rotates to the next network only when it can't connect.
 
 - **Console:** raw TCP on **port 23**. Same text console as USB: send a line ending in `\n`, read text back.
 - **One client at a time** - a new connection replaces the old one. If the payload holds the connection,
