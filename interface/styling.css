@@ -215,9 +215,9 @@ main {
 }
 
 #dynamicPanel {
-    flex: 1;
+    flex: 1 1 0;               /* takes the height left in the column - never sized by the (long) log list */
     min-height: 0;
-    display: flex;             /* lets the logs grow into the free space */
+    display: flex;
     flex-direction: column;
     background: #1a2238;
     border-radius: 10px;
@@ -490,8 +490,8 @@ main {
     background: #111;
     color: #fff;
     padding: 10px;
-    flex: 1 1 auto;            /* fill the panel down to the filter bar */
-    min-height: 200px;
+    flex: 1 1 0;               /* logs fill their panel down to the filter bar; the list scrolls inside */
+    min-height: 150px;
     overflow-y: auto;
     border-radius: 8px;
     font-family: monospace;
