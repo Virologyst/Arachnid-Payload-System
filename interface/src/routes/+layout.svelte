@@ -5,7 +5,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>Project Arachnid: Huntsman PL01 - Ultrasonic Thickness</title>
+	<title>Project Arachnid: Huntsman PL01</title>
 </svelte:head>
 
 <header class="navbar">
@@ -13,7 +13,7 @@
 		<a href="/" class="logo-link">
 			<img src="/logo.png" alt="V-Source Development" class="logo" />
 		</a>
-		<h1 style="margin-left: 25px">Project Arachnid: Huntsman PL01 - Ultrasonic Thickness</h1>
+		<h1 style="margin-left: 25px">Project Arachnid: Huntsman PL01</h1>
 	</div>
 
 	<nav class="nav">

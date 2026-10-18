@@ -488,7 +488,7 @@ main {
     color: #fff;
     padding: 10px;
     height: 100%;
-    max-height: 600px;
+    max-height: 260px;   /* was 600 - the robot control card sits above it */
     overflow-y: auto;
     border-radius: 8px;
     font-family: monospace;
