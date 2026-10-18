@@ -156,7 +156,7 @@ main {
 
 .camera-pane {
     max-height: 900px;
-    flex: 2;
+    flex: 2.6;                 /* was 2 - narrower side panel, bigger camera */
     min-width: 0;
     background: #000;
     display: flex;
@@ -216,6 +216,9 @@ main {
 
 #dynamicPanel {
     flex: 1;
+    min-height: 0;
+    display: flex;             /* lets the logs grow into the free space */
+    flex-direction: column;
     background: #1a2238;
     border-radius: 10px;
     padding: 15px;
@@ -487,8 +490,8 @@ main {
     background: #111;
     color: #fff;
     padding: 10px;
-    height: 100%;
-    max-height: 260px;   /* was 600 - the robot control card sits above it */
+    flex: 1 1 auto;            /* fill the panel down to the filter bar */
+    min-height: 200px;
     overflow-y: auto;
     border-radius: 8px;
     font-family: monospace;
