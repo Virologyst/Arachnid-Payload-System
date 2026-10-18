@@ -615,6 +615,36 @@ def robot_pose():
     name = (request.get_json(silent=True) or {}).get("pose", "")
     return _robot_reply(lambda: robot.pose(name))
 
+# ──────────────── NETWORK: home router <-> payload hotspot ────────────────
+# One Wi-Fi radio on the Pi (deploy/hotspot/payload-wifi). The robot is told first (firmware 'wifi <n>':
+# 1 = home, 2 = hotspot), then the Pi switches - which drops this page; the browser has to follow.
+ROBOT_NETWORK = {"home": "1", "hotspot": "2"}
+
+def network_mode() -> str:
+    out = subprocess.run(["nmcli", "-t", "-f", "GENERAL.CONNECTION", "device", "show", "wlan0"],
+                         capture_output=True, text=True).stdout
+    return "hotspot" if "arachnid-hotspot" in out else "home"
+
+@app.route("/network", methods=["GET", "POST"])
+def network():
+    if request.method == "GET":
+        return jsonify({"mode": network_mode()})
+    mode = (request.get_json(silent=True) or {}).get("mode")
+    if mode not in ROBOT_NETWORK:
+        return jsonify({"ok": False, "error": "mode must be 'home' or 'hotspot'"}), 400
+    try:
+        robot.send_once(f"wifi {ROBOT_NETWORK[mode]}")
+        robot_note = "robot switching"
+    except Exception as e:
+        robot_note = f"robot not told ({e}) - it moves by itself only when its network disappears"
+    def switch():
+        time.sleep(2)   # let this reply reach the browser first
+        subprocess.run(["sudo", "-n", "/usr/local/bin/payload-wifi", mode])
+    Thread(target=switch, daemon=True).start()
+    app.logger.info(f"Network: switching to {mode} ({robot_note})")
+    return jsonify({"ok": True, "mode": mode, "robot": robot_note,
+                    "url": f"http://{HOTSPOT_IP}" if mode == "hotspot" else "http://arachnid.local"})
+
 # ──────────────── ROUTES ────────────────
 @app.route('/drill', methods=['POST'])
 def drill_endpoint():

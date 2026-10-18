@@ -242,13 +242,19 @@
         mobileMenuOpen = !mobileMenuOpen;
     }
 
-    async function runDrill() {
+    // "Take Reading": the robot squats (lowers the body, holds, stands) so the probe underneath touches down.
+    // Needs the robot armed and standing.
+    async function takeReading() {
         try {
-            const res = await fetch('/drill', { method: 'POST' });
+            const res = await fetch('/robot/pose', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pose: 'squat' })
+            });
             const data = await res.json();
-            log(`Drill: ${data.message}`, data.status === 'success' ? 'ACTION' : 'ERROR');
+            log(data.ok ? 'Take Reading: squatting' : `Take Reading: ${data.error}`, data.ok ? 'ACTION' : 'ERROR');
         } catch (e) {
-            log(`Drill error: ${e}`, 'ERROR');
+            log(`Take Reading error: ${e}`, 'ERROR');
         }
     }
 
@@ -294,7 +300,7 @@
                     🌡 {enviro.temperature}°C | 💧 {enviro.humidity}% | 📈 {enviro.pressure}hPa
                 </div>
                 <div class="capture-overlay">
-                    <button type="button" class="drill-btn" on:click={runDrill}>Take Reading</button>
+                    <button type="button" class="drill-btn" on:click={takeReading}>Take Reading</button>
                     <button class="capture-btn" on:click={captureImage}>📸 Capture Image</button>
                 </div>
             </div>

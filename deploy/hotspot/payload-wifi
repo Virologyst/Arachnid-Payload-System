@@ -17,7 +17,14 @@ case "${1:-status}" in
     home)
         nmcli con down "$CON" 2>/dev/null
         nmcli device wifi rescan 2>/dev/null; sleep 3
-        nmcli device connect wlan0 ;;
+        nmcli device connect wlan0
+        # In the field there's no home network: don't leave the Pi unreachable - bring the hotspot back
+        for _ in $(seq 20); do
+            nmcli -t -f DEVICE,STATE device | grep -q '^wlan0:connected$' && exit 0
+            sleep 1
+        done
+        echo "Home Wi-Fi not found - back to the hotspot"
+        nmcli con up "$CON" ;;
     status) nmcli -t -f GENERAL.CONNECTION,IP4.ADDRESS device show wlan0 ;;
     *) echo "usage: payload-wifi auto|hotspot|home|status"; exit 1 ;;
 esac

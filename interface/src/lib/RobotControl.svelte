@@ -35,6 +35,35 @@
         } catch (e) { /* keep last state */ }
     }
 
+    // Home router <-> payload hotspot (Pi and robot together). The page drops when the Pi switches.
+    let network = '';            // 'home' | 'hotspot'
+    let netMsg = '';
+
+    async function refreshNetwork() {
+        try { network = (await (await fetch('/network')).json()).mode; } catch (e) { /* keep last */ }
+    }
+
+    async function switchNetwork() {
+        const to = network === 'hotspot' ? 'home' : 'hotspot';
+        const how = to === 'hotspot'
+            ? "Join Wi-Fi 'Huntsman PL01', then open http://10.42.0.1"
+            : "Rejoin your home Wi-Fi, then open http://arachnid.local (or the Pi's home IP)";
+        if (!confirm(`Switch the Pi and the robot to ${to === 'hotspot' ? 'the hotspot' : 'the home router'}?
+
+This page will disconnect. ${how}.`)) return;
+        release();
+        try {
+            const data = await (await fetch('/network', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: to })
+            })).json();
+            netMsg = data.ok ? `Switching to ${to} (${data.robot}). ${how}.` : data.error;
+        } catch (e) {
+            netMsg = `No reply from the payload: ${e}`;
+        }
+    }
+
     function setArmed(on) {
         release();
         post('/robot/arm', { armed: on });
@@ -92,6 +121,7 @@
 
     onMount(() => {
         refresh();
+        refreshNetwork();
         poll = setInterval(refresh, 1000);
         window.addEventListener('keydown', onKeyDown);
         window.addEventListener('keyup', onKeyUp);
@@ -119,10 +149,16 @@
 <div class="robot-card">
     <div class="robot-head">
         <h2>Huntsman control</h2>
-        <label class="arm">
-            <input type="checkbox" checked={state.armed} on:change={(e) => setArmed(e.target.checked)}>
-            Armed
-        </label>
+        <div class="head-controls">
+            <button class="net-btn" disabled={!network || state.moving || state.pose_busy} on:click={switchNetwork}
+                    title="Switch the Pi and the robot between the home router and the payload hotspot">
+                {network === 'hotspot' ? 'Hotspot' : network === 'home' ? 'Router' : '…'} ⇄
+            </button>
+            <label class="arm">
+                <input type="checkbox" checked={state.armed} on:change={(e) => setArmed(e.target.checked)}>
+                Armed
+            </label>
+        </div>
     </div>
 
     <div class="robot-status">
@@ -154,6 +190,7 @@
     <p class="hint">Arm, then hold an arrow (button or arrow key) to move - release to stop. Space / Esc = stop.</p>
 
     {#if error}<p class="error">{error}</p>{/if}
+    {#if netMsg}<p class="net-msg">{netMsg}</p>{/if}
 
     <div class="robot-log">
         {#each state.lines.slice(-8) as line}<div>{line}</div>{/each}
@@ -169,6 +206,13 @@
     }
     .robot-head { display: flex; justify-content: space-between; align-items: center; }
     .robot-head h2 { margin: 4px 0; font-size: 1.1rem; }
+    .head-controls { display: flex; align-items: center; gap: 12px; }
+    .net-btn {
+        padding: 4px 10px; border: 1px solid #2e86de; border-radius: 6px;
+        background: transparent; color: #fff; cursor: pointer; font-size: 0.85rem;
+    }
+    .net-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .net-msg { color: #f1c40f; font-size: 0.85rem; margin: 4px 0; }
     .arm { display: flex; gap: 6px; align-items: center; font-weight: bold; cursor: pointer; }
     .arm input { width: 18px; height: 18px; }
     .robot-status { font-size: 0.9rem; margin: 6px 0 10px; display: flex; align-items: center; gap: 8px; }

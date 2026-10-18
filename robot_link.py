@@ -14,7 +14,7 @@ import time
 from collections import deque
 
 DRIVE_COMMANDS = {"forward": "walk", "back": "back", "left": "turn left", "right": "turn right"}
-POSE_COMMANDS = {"stand": "stand", "sit": "sit"}
+POSE_COMMANDS = {"stand": "stand", "sit": "sit", "squat": "squat"}   # squat = "Take Reading" (firmware 2026-10-18)
 
 HEARTBEAT_TIMEOUT_S = 0.7
 STOP_WAIT_S = 6.0           # finish the current step + return to the stand pose
@@ -22,7 +22,7 @@ POSE_TIMEOUT_S = 15.0
 
 # Robot console lines that mean "idle again" (motion.cpp)
 _DRIVE_DONE = ("Stopped", "Not in the stand pose", "Obstacle at", "Paused")
-_POSE_DONE = ("Standing.", "Sitting.")
+_POSE_DONE = ("Standing.", "Sitting.", "Unknown command", "Aborted")   # Unknown: firmware without 'squat'
 
 
 class RobotLink:
@@ -169,6 +169,24 @@ class RobotLink:
             self.pose_busy = True
             self._send(POSE_COMMANDS[name] + "\n")
             self.log(f"Robot: {POSE_COMMANDS[name]}")
+
+    def send_once(self, text: str) -> None:
+        """A non-motion command (e.g. 'wifi 2'). Uses the armed connection, or a short-lived one if not armed."""
+        with self._lock:
+            if self.moving or self.pose_busy:
+                raise RuntimeError("Robot is busy - stop first")
+            if self.connected:
+                self._send(text + "\n")
+                self.log(f"Robot: {text}")
+                return
+        sock = socket.create_connection((self.host, self.port), timeout=3)
+        try:
+            time.sleep(0.3)               # let the console greet us first
+            sock.sendall((text + "\n").encode())
+            time.sleep(0.3)
+            self.log(f"Robot: {text}")
+        finally:
+            sock.close()
 
     def _watchdog(self) -> None:
         while True:
