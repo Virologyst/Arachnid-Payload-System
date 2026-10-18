@@ -341,6 +341,11 @@ class TargetDetectionDummy(TargetDetectionInterface):
         np_hsv_image[..., 1] = 255  # Full saturation
         np_hsv_image[..., 0] = (int(time.monotonic()) % 60) * 3  # Change hue over time
         np_image = cv2.cvtColor(np_hsv_image, cv2.COLOR_HSV2BGR)
+        # Say what this is, so the test pattern isn't mistaken for a camera picture
+        for text, y in (("CAMERA NOT CONNECTED", 220), ("test pattern - retrying", 270)):
+            (w, _), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)
+            cv2.putText(np_image, text, ((640 - w) // 2, y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 4, cv2.LINE_AA)
+            cv2.putText(np_image, text, ((640 - w) // 2, y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2, cv2.LINE_AA)
         return np_image
 
     def make_detections(self) -> list[Detection]:

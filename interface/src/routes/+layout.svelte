@@ -11,7 +11,7 @@
 <header class="navbar">
 	<div class="logo-container">
 		<a href="/" class="logo-link">
-			<img src="/logo.png" alt="Home" class="logo" />
+			<img src="/logo.png" alt="V-Source Development" class="logo" />
 		</a>
 		<h1 style="margin-left: 25px">Project Arachnid: Huntsman PL01 - Ultrasonic Thickness</h1>
 	</div>

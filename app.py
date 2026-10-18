@@ -77,7 +77,9 @@ def captive_portal():
     host = request.host.split(":")[0].lower()
     if host in OWN_HOSTS or host.replace(".", "").isdigit():   # our names, or any IP address
         return None
+    print(f"Captive portal: {request.remote_addr} asked for {host}{request.path} - redirecting", flush=True)
     return redirect(f"http://{HOTSPOT_IP}:8080/", code=302)
+
 DEPLOY_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "deploy.sh")
 
 # ───── Logging Setup ─────
@@ -133,6 +135,24 @@ except Exception as e:
     print(f"OAK camera not available ({e}) - using dummy detections", flush=True)
 
 target_system.start()
+
+def camera_retry_thread():
+    """At boot the OAK can still be enumerating when the app starts. Keep trying and swap the real
+    camera in for the dummy once it answers (every user of target_system reads the global each time)."""
+    global target_system, CAMERA_OK
+    while not CAMERA_OK:
+        time.sleep(5)
+        try:
+            real = TargetDetection(LOG_BUFFER)
+            real.start()
+        except Exception:
+            continue
+        dummy, target_system, CAMERA_OK = target_system, real, True
+        dummy.stop()
+        print("OAK camera connected - live detections", flush=True)
+
+if not CAMERA_OK:
+    Thread(target=camera_retry_thread, daemon=True).start()
 
 # ──────────────── Drilling Mechanism (Nicky) ────────────────
 

@@ -20,8 +20,8 @@ header {
 }
 
 .logo-link img.logo {
-    width: 70px;
-    height: 70px;
+    height: 56px;              /* wide V-Source logo: fixed height, natural width */
+    width: auto;
     /*border-radius: 50%;*/
     transition: transform 0.2s ease;
 }
@@ -577,9 +577,9 @@ main {
     flex: 1;
   }
 
-  .logo {
-    width: 50px;
-    height: auto;
+  .logo-link img.logo {
+    height: 36px;
+    width: auto;
   }
 
   .navbar h1 {
