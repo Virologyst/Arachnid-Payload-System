@@ -67,6 +67,11 @@ undervoltage or overheating.
 total - the OAK then resets every few seconds (`X_LINK_ERROR` in the log, video stalls). Only set it if the
 supply really gives 5 A. Check: `vcgencmd pmic_read_adc EXT5V_V` - aim for 5.1 V under load (4.96 V seen).
 
+**Enviro+ LCD on the Pi 5 (suggested 2026-11-08, untested - the SD card died first):** the LCD's DC pin is
+GPIO9, which `dtparam=spi=on` claims as SPI0 MISO, so `st7735` can't take it and the LCD stays blank
+(`LCD init failed` in the log) while the I2C sensors work. In `/boot/firmware/config.txt` replace
+`dtparam=spi=on` with `dtoverlay=spi0-2cs,no_miso` (keeps CS0/CS1, frees GPIO9), then reboot.
+
 Enviro+ check: `i2cdetect -y 1` should show 0x23 (LTR559), 0x49 (ADS1015 gas) and 0x76 (BME280).
 
 ## 4b. Hotspot (field use) and captive portal
