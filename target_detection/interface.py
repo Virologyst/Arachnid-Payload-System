@@ -4,6 +4,7 @@ from typing import Optional, Callable
 import numpy as np
 import cv2
 import math
+import os
 import time
 import threading
 import traceback
@@ -43,6 +44,11 @@ class Detection:
         return (f"Detection(type={self.type}, conf={self.confidence:.2f}, "
                 f"x={self.x}, y={self.y}, w={self.width}, h={self.height}, "
                 f"angle={self.angle})")
+
+# Auto-save an annotated frame (at most every 4 s) while anything is detected. Off by default to spare the
+# SD card - set PAYLOAD_AUTOSAVE=1 to turn it on. Saves to PAYLOAD_IMAGE_DIR (default ~/DCIM), like /capture.
+AUTOSAVE = os.environ.get("PAYLOAD_AUTOSAVE", "0") == "1"
+AUTOSAVE_DIR = os.path.expanduser(os.environ.get("PAYLOAD_IMAGE_DIR", "~/DCIM"))
 
 def angle_to_bar(angle: float) -> float:
     pressure_map_slope = 0.035497786
@@ -194,8 +200,8 @@ def draw_detections(frame: np.ndarray, dets: list[Detection], logger) -> np.ndar
             newest_detections.append(det)
             last_detections[DetectionType.NeedleCenter] = now
 
-    if len(dets) > 0 and ((now - saved_image_last) > repeat_delay):
-        cv2.imwrite(f"/home/egh455-g5/DCIM/{uuid.uuid4()}.jpg", frame)
+    if AUTOSAVE and len(dets) > 0 and ((now - saved_image_last) > repeat_delay):
+        cv2.imwrite(os.path.join(AUTOSAVE_DIR, f"{uuid.uuid4()}.jpg"), frame)
         saved_image_last = now
 
     return frame, newest_detections

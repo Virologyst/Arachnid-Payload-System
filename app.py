@@ -17,7 +17,6 @@ from collections import deque
 import cv2
 import depthai as dai
 
-import sqlite3
 from flask import (
     Flask, Response, jsonify,
     send_from_directory, render_template_string,
@@ -86,20 +85,9 @@ DEPLOY_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "deploy
 from collections import deque
 import logging
 
-LOG_DIR = "logs"
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE = os.path.join(LOG_DIR, "egh455.log")
-
+# Logs live in memory only (lost on restart): nothing is written to the SD card, which wears out and
+# corrupts on power loss (the first card died 2026-11-08). print() output still reaches the journal.
 LOG_BUFFER = deque(maxlen=1000)
-
-# Load existing logs from main log file on start
-if os.path.exists(LOG_FILE):
-    with open(LOG_FILE, "r") as f:
-        lines = f.readlines()[-1000:]  # only keep latest 1000 lines
-        for line in lines:
-            line = line.replace("\0", "").strip()   # power loss mid-write leaves NUL runs in the file
-            if line:
-                LOG_BUFFER.append(line)
 
 class FrontendBufferHandler(logging.Handler):
     def emit(self, record):
@@ -108,20 +96,13 @@ class FrontendBufferHandler(logging.Handler):
 # St format
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 
-# File handler (persistent logs)
-# file_handler = logging.FileHandler(LOG_FILE)
-file_handler = logging.FileHandler(LOG_FILE, mode='a')
-file_handler.setFormatter(formatter)
 buffer_handler = FrontendBufferHandler()
 buffer_handler.setFormatter(formatter)
 
 # Attach
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
-app.logger.addHandler(file_handler)
 app.logger.addHandler(buffer_handler)
 app.logger.setLevel(logging.INFO)
-app.logger.addHandler(file_handler)
-app.logger.addHandler(buffer_handler)
 app.logger.propagate = False
 
 # Initialize detection system (falls back to the dummy if no OAK camera is connected)
@@ -279,47 +260,13 @@ except (Exception, SystemExit) as e:   # gpiodevice calls sys.exit() when a pin 
     disp = None
 
 
-# ──────────────── DATABASE SETUP ────────────────
-DB_PATH = 'database/egh455.db'
-
-def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row  # makes results dict-like
-    return conn
-
-def init_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-
-    # Enviro+ sensor data
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS enviro_data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            temperature REAL,
-            humidity REAL,
-            pressure REAL,
-            oxidising REAL,
-            reducing REAL,
-            nh3 REAL,
-            lux REAL,
-            proximity INTEGER
-        )
-    """)
-
-    # System status / flags
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS status (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            key TEXT UNIQUE,
-            value TEXT,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-
-    conn.commit()
-    conn.close()
+# ──────────────── SENSOR HISTORY (memory only) ────────────────
+# Was SQLite, with an insert + commit on every /enviro poll. Readings aren't kept any more: the last
+# HISTORY_MINUTES live in RAM for the dashboard graphs, and nothing touches the SD card.
+HISTORY_MINUTES = 10
+ENVIRO_HISTORY = deque(maxlen=2000)   # dicts with a UTC "timestamp"
+_history_lock = Lock()
+STATUS = {}                           # shown by /status (was an always-empty DB table)
 
 # ──────────────── TARGET DETECTION INTEGRATION (Oliver) ────────────────
 
@@ -656,37 +603,22 @@ def drill_endpoint():
 
 @app.route("/logs", methods=["GET", "POST"])
 def logs_endpoint():
-    """GET returns combined backend logs (file + memory). POST appends new frontend entries."""
+    """GET returns the backend + frontend logs (memory only). POST adds a frontend entry."""
     import re
 
     if request.method == "GET":
         logs_list = []
 
-        # Load logs
-        try:
-            with open(LOG_FILE, "r") as f:
-                lines = f.readlines()[-10000:]  # 0000 lines
-                for entry in lines:
-                    match = re.match(r"(\d{2}:\d{2}:\d{2}),?\d*\s+\[(\w+)\]\s+(.*)", entry)
-                    if match:
-                        ts, lvl, msg = match.groups()
-                        logs_list.append({"timestamp": ts, "type": lvl, "message": msg.strip()})
-                    else:
-                        logs_list.append({"timestamp": "", "type": "SYSTEM", "message": entry.strip()})
-        except FileNotFoundError:
-            pass
-
-        # Merge memory buffer
+        # Backend lines carry a date, frontend lines (POST below) only a time
         for entry in list(LOG_BUFFER):
-            match = re.match(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),?\d*\s+\[(\w+)\]\s+(.*)", entry)
+            match = re.match(r"((?:\d{4}-\d{2}-\d{2} )?\d{2}:\d{2}:\d{2}),?\d*\s+\[(\w+)\]\s+(.*)", entry)
             if match:
                 ts, lvl, msg = match.groups()
                 logs_list.append({"timestamp": ts, "type": lvl, "message": msg.strip()})
             else:
                 logs_list.append({"timestamp": "", "type": "SYSTEM", "message": entry.strip()})
 
-        # Return newest
-        logs_list = logs_list[-10000:]
+        # Return newest first
         logs_list.reverse()
         return jsonify(logs_list)
 
@@ -695,15 +627,7 @@ def logs_endpoint():
     msg = data.get("message", "")
     lvl = data.get("type", "SYSTEM").upper()
 
-    log_line = f"{datetime.datetime.now():%H:%M:%S} [{lvl}] {msg}"
-    with open(LOG_FILE, "a") as f:
-        f.write(log_line + "\n")
-    LOG_BUFFER.append(log_line)
-
-    # Force flush so it appears immediately
-    for handler in app.logger.handlers:
-        handler.flush()
-
+    LOG_BUFFER.append(f"{datetime.datetime.now():%H:%M:%S} [{lvl}] {msg}")
     return jsonify({"status": "ok"})
 
 @app.route("/")
@@ -752,15 +676,13 @@ def get_enviro_data():
 
         targets = target_system.get_detections()
 
-        # --- Save to DB ---
-        conn = get_db_connection()
-        conn.execute(
-            "INSERT INTO enviro_data (temperature, humidity, pressure, oxidising, reducing, nh3, lux, proximity) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (temperature, humidity, pressure, oxidising, reducing, nh3, lux, prox)
-        )
-        conn.commit()
-        conn.close()
+        # --- Keep in memory for /enviro/history ---
+        with _history_lock:
+            ENVIRO_HISTORY.append({
+                "timestamp": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "temperature": temperature, "humidity": humidity, "pressure": pressure,
+                "oxidising": oxidising, "reducing": reducing, "nh3": nh3, "lux": lux,
+            })
 
         return jsonify({
             "temperature": temperature,
@@ -790,21 +712,12 @@ def update():
 
 @app.route("/enviro/history")
 def get_enviro_history():
-    """Return last 10 minutes of enviro data from SQLite.
+    """Return the last HISTORY_MINUTES of enviro data (from memory).
        If empty, generate dummy data for testing."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-
-    ten_min_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=10)
-    cursor.execute("""
-        SELECT timestamp, temperature, humidity, pressure, oxidising, reducing, nh3, lux
-        FROM enviro_data
-        WHERE timestamp >= ?
-        ORDER BY timestamp ASC
-    """, (ten_min_ago.isoformat(),))
-    rows = [dict(row) for row in cursor.fetchall()]
-    conn.close()
+    cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=HISTORY_MINUTES)
+    cutoff = cutoff.strftime("%Y-%m-%d %H:%M:%S")
+    with _history_lock:
+        rows = [dict(r) for r in ENVIRO_HISTORY if r["timestamp"] >= cutoff]
 
     if not rows:
         # Generate 10 minutes of fake points, one per 30s
@@ -827,10 +740,7 @@ def get_enviro_history():
 
 @app.route("/status")
 def status():
-    conn = get_db_connection()
-    cursor = conn.execute("SELECT * FROM status")
-    results = [dict(row) for row in cursor.fetchall()]
-    conn.close()
+    results = [{"key": k, "value": v} for k, v in STATUS.items()]
     return render_template_string("<h1>Status Table</h1>" + str(results))
 
 @app.route("/targets")
@@ -839,7 +749,6 @@ def get_targets():
     """Expose latest detections as JSON."""
     # ???
     detections = target_system.get_detections()
-    print("Targets:", detections)
 
     data = target_system.get_gauge_pressure()
 
@@ -862,6 +771,4 @@ def get_targets():
     # return jsonify({})
 
 if __name__ == '__main__':
-    init_db()
-    print("Database initialized at", DB_PATH)
     app.run(host='0.0.0.0', port=8080, debug=False)

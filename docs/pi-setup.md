@@ -1,13 +1,13 @@
 # Raspberry Pi 5 setup
 
-Fresh Pi 5 -> payload running. This is what was done on the current Pi (2026-10-16).
+Fresh Pi 5 -> payload running. First done 2026-10-16; redone on a new card 2026-11-08 (the first card died).
 
 | | |
 |---|---|
 | Hostname / IP | `arachnid` / 192.168.0.162 (DHCP - reserve it in the router) |
-| User | `virologyst` (passwordless sudo via `/etc/sudoers.d/010_virologyst-nopasswd`, added 2026-10-16) |
+| User | `virologyst`. Passwordless sudo only works during the first boot on a fresh image - add `/etc/sudoers.d/010_virologyst-nopasswd` (user, via `sudo visudo -f`) so Claude can run sudo over SSH afterwards |
 | OS | Raspberry Pi OS 64-bit, **Debian 13 Trixie**, kernel 6.18, Python 3.13 |
-| Hardware | Pi 5 8 GB, 256 GB SD card |
+| Hardware | Pi 5 8 GB, 464 GB SD card (since 2026-11-08) |
 | Repo | `~/Arachnid-Payload-System`, venv in `.venv` |
 
 ## 1. On the Windows PC: SSH key (once)
@@ -25,8 +25,10 @@ Default location, empty passphrase (so Claude can connect unattended). Public ke
   Trixie works: depthai 3.11 installs on Python 3.13.
 - Customisation: hostname `arachnid`, user, Wi-Fi (same network as huntsman.local, country AU), SSH with
   your public key.
-- On this Pi only the hostname carried over - SSH, the key and Wi-Fi had to be set by hand. Check after the
-  first boot.
+- Imager settings don't reliably carry over: in 2026-10 only the hostname did; in 2026-11 Wi-Fi and the
+  user did but not the hostname (`sudo hostnamectl set-hostname arachnid` + fix `/etc/hosts`) or SSH. Check after
+  the first boot. A reflashed Pi has new host keys: on the PC, `ssh-keygen -R 192.168.0.162` clears the
+  "REMOTE HOST IDENTIFICATION HAS CHANGED" error.
 
 ## 3. SSH access (if the key didn't carry over)
 
@@ -35,15 +37,21 @@ Default location, empty passphrase (so Claude can connect unattended). Public ke
 **first** value it reads, and `sshd_config.d/*.conf` is read first, in name order - so a `00-*.conf` file
 decides. Check the result with `sudo sshd -T | grep -i authentication`.
 
-On the Pi (keyboard/screen), add the PC's key:
+On the Pi (keyboard/screen), turn SSH on with passwords allowed for now:
 
 ```bash
-mkdir -p ~/.ssh && chmod 700 ~/.ssh
-echo "<contents of id_ed25519.pub>" >> ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
+printf "PubkeyAuthentication yes\nPasswordAuthentication yes\n" | sudo tee /etc/ssh/sshd_config.d/00-auth.conf
+sudo systemctl enable --now ssh
 ```
 
-and make SSH keys-only:
+Then copy the PC's key from PowerShell **or** cmd (full path - `$env:` / `%...%` only work in one of them;
+`tr` strips Windows line endings, which sshd rejects):
+
+```bash
+type C:\Users\craig\.ssh\id_ed25519.pub | ssh virologyst@192.168.0.162 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && tr -d '\r' > ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+```
+
+Then make SSH keys-only:
 
 ```bash
 printf "PubkeyAuthentication yes\nPasswordAuthentication no\nKbdInteractiveAuthentication no\n" | sudo tee /etc/ssh/sshd_config.d/00-auth.conf
@@ -56,8 +64,10 @@ sudo systemctl reload ssh
 sudo apt update && sudo apt full-upgrade -y
 sudo apt install -y git python3-venv python3-dev i2c-tools nodejs npm   # Trixie's nodejs is 20.19 - enough for Vite 7
 sudo raspi-config nonint do_i2c 0      # Enviro+ sensors
-sudo raspi-config nonint do_spi 0      # Enviro+ LCD
+sudo raspi-config nonint do_boot_behaviour B4   # desktop, auto-login (a fresh image asks for the password)
 ```
+
+SPI for the Enviro+ LCD: **not** `do_spi` / `dtparam=spi=on` - see the LCD note below.
 
 Power check, any time: `vcgencmd get_throttled` should print `throttled=0x0`. Anything else means
 undervoltage or overheating.
@@ -67,10 +77,27 @@ undervoltage or overheating.
 total - the OAK then resets every few seconds (`X_LINK_ERROR` in the log, video stalls). Only set it if the
 supply really gives 5 A. Check: `vcgencmd pmic_read_adc EXT5V_V` - aim for 5.1 V under load (4.96 V seen).
 
-**Enviro+ LCD on the Pi 5 (suggested 2026-11-08, untested - the SD card died first):** the LCD's DC pin is
-GPIO9, which `dtparam=spi=on` claims as SPI0 MISO, so `st7735` can't take it and the LCD stays blank
-(`LCD init failed` in the log) while the I2C sensors work. In `/boot/firmware/config.txt` replace
-`dtparam=spi=on` with `dtoverlay=spi0-2cs,no_miso` (keeps CS0/CS1, frees GPIO9), then reboot.
+**Enviro+ LCD on the Pi 5:** the LCD's DC pin is GPIO9, which `dtparam=spi=on` claims as SPI0 MISO, so
+`st7735` can't take it and the LCD stays blank (`LCD init failed` in the log) while the I2C sensors work.
+In `/boot/firmware/config.txt` use `dtoverlay=spi0-2cs,no_miso` instead of `dtparam=spi=on` (keeps
+CS0/CS1, frees GPIO9), then reboot. Applied 2026-11-08: the log says `Enviro+ and LCD initialised correctly`.
+
+**Spare the SD card** (the first card died 2026-11-08). The app itself writes nothing in normal running;
+these stop the OS writing constantly too:
+
+```bash
+# System journal in RAM only (lost on reboot; capped at 50 MB)
+sudo mkdir -p /etc/systemd/journald.conf.d
+printf "[Journal]\nStorage=volatile\nRuntimeMaxUse=50M\n" | sudo tee /etc/systemd/journald.conf.d/volatile.conf
+sudo rm -rf /var/log/journal && sudo systemctl restart systemd-journald
+# Swap in RAM only: Trixie uses zram, plus a 2 GB /var/swap writeback file on the card - turn that off
+sudo mkdir -p /etc/rpi/swap.conf.d
+printf "[Main]\nMechanism=zram\n" | sudo tee /etc/rpi/swap.conf.d/90-no-disk-swap.conf   # applies on reboot
+```
+
+Check `/` is mounted `noatime` (`findmnt /` - Raspberry Pi OS sets it by default). Shut down before
+cutting battery power where possible (`sudo shutdown now`, or the dashboard) - a power cut mid-write is
+what corrupts cards.
 
 Enviro+ check: `i2cdetect -y 1` should show 0x23 (LTR559), 0x49 (ADS1015 gas) and 0x76 (BME280).
 
@@ -129,7 +156,7 @@ pip install depthai "depthai-nodes==0.3.7" flask enviroplus pimoroni-bme280 ltr5
 **depthai-nodes must stay at 0.3.7**: `target_detection/inference.py` uses `ImgDetectionsBridge` (removed in
 0.5) and its `setLabelEncoding()` (removed in 0.4). depthai-nodes brings `opencv-python-headless` (4.10, includes `cv2.aruco`) - don't add
 another OpenCV package. Don't `pip install -r requirements.txt` - it is a whole-system `pip freeze` and
-won't install cleanly. Installed as of 2026-10-16: depthai 3.11.0, depthai-nodes 0.3.7.
+won't install cleanly. Installed as of 2026-11-08: depthai 3.12.0, depthai-nodes 0.3.7.
 
 ## 7. Dashboard (web UI)
 
@@ -159,7 +186,8 @@ The app starts without the OAK (dummy detections - a colour-cycling test image) 
 |---|---|---|
 | `PAYLOAD_DRILL` | `0` | `1` = drill fitted: GPIO13 servo set up, `/drill` works |
 | `PAYLOAD_DRILL_AUTO` | `0` | `1` (with `PAYLOAD_DRILL=1`) = drill runs automatically when gauge pressure averages < 2 bar |
-| `PAYLOAD_IMAGE_DIR` | `~/DCIM` | where `/capture` saves images |
+| `PAYLOAD_IMAGE_DIR` | `~/DCIM` | where `/capture` (and auto-save) save images |
+| `PAYLOAD_AUTOSAVE` | `0` | `1` = the detector saves an annotated frame (max every 4 s) while anything is detected |
 | `PAYLOAD_ROBOT_HOST` | `huntsman.local` | robot console host (dashboard driving) |
 | `PAYLOAD_ROBOT_PORT` | `23` | robot console port |
 

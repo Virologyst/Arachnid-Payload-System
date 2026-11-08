@@ -9,7 +9,7 @@ An autonomous sensing and inspection payload built on a Raspberry Pi. It combine
   - pressure gauges (needle centre and tip), with the gauge reading converted to a pressure value
   - ArUco markers (5×5 dictionary, detected with OpenCV using calibrated camera intrinsics)
 - **Live video** — annotated MJPEG stream from the camera, with still-image capture.
-- **Environmental sensing** — Pimoroni Enviro+ readings for temperature (CPU-heat compensated), humidity, pressure, oxidising / reducing / NH₃ gas and light / proximity, logged to SQLite.
+- **Environmental sensing** — Pimoroni Enviro+ readings for temperature (CPU-heat compensated), humidity, pressure, oxidising / reducing / NH₃ gas and light / proximity; the last 10 minutes are kept in memory for the graphs (nothing is stored).
 - **On-board LCD** — the Enviro+ ST7735 display can show the device IP, live detections or temperature.
 - **Automatic drill** — a continuous-rotation servo drives the drill. It runs automatically when the moving-average gauge pressure falls below 2 bar, or on demand through the API.
 - **Web dashboard** — a SvelteKit single-page app for live video, sensor charts, detections, captured images and logs.
@@ -86,7 +86,7 @@ The server listens on port **8080**. Open `http://<pi-ip>:8080` in a browser. Th
 | GET | `/` | Web dashboard |
 | GET | `/video_feed` | Annotated MJPEG camera stream |
 | GET | `/targets` | Latest detections and gauge pressure |
-| GET | `/enviro` | Current Enviro+ readings (also logged to the database) |
+| GET | `/enviro` | Current Enviro+ readings (also added to the in-memory 10-minute history) |
 | GET | `/enviro/history` | Last 10 minutes of sensor readings |
 | POST | `/capture` | Save a still image |
 | GET | `/images` | List captured images |
@@ -103,7 +103,7 @@ The server listens on port **8080**. Open `http://<pi-ip>:8080` in a browser. Th
 
 ## Data storage
 
-Sensor readings and status flags are stored in SQLite at `database/` (created on first run). Captured images are saved to the directory set by `IMAGE_DIR` in `app.py`.
+Nothing is stored by default, to spare the SD card: sensor history (10 minutes) and logs live in memory and are lost on restart. Images are only written by `/capture`, and by the detector when `PAYLOAD_AUTOSAVE=1`, to `PAYLOAD_IMAGE_DIR` (default `~/DCIM`).
 
 ## Model training
 

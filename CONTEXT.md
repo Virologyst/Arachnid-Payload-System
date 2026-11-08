@@ -3,7 +3,7 @@
 Living summary of what this project is, what has been decided and why, and where it is up to.
 **Keep this file current.**
 
-_Last updated: 2026-10-04_
+_Last updated: 2026-11-08_
 
 ## What it is
 
@@ -25,7 +25,7 @@ EGH455 project; [README.md](README.md) describes the system as built there.
 ## What the software does (as inherited)
 
 See [README.md](README.md) for the full API. In short: `app.py` is a Flask server on port 8080 with the
-annotated MJPEG stream, detections (valves, gauges -> pressure, ArUco), Enviro+ readings logged to SQLite,
+annotated MJPEG stream, detections (valves, gauges -> pressure, ArUco), Enviro+ readings (memory only since 2026-11-08, see below),
 LCD modes, image capture, the drill, logs and status; it serves the SvelteKit dashboard in `interface/`.
 
 ## Key decisions (and why)
@@ -91,11 +91,17 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
 - [x] depthai-nodes pinned to 0.3.7 (`ImgDetectionsBridge` removed in 0.5, its `setLabelEncoding` in 0.4)
 - [x] OAK-D Lite running on the Pi (2026-10-16), USB 3 (5 Gbps), real detection pipeline - earlier cables were
       charge-only
-- [ ] Enviro+ LCD on the Pi 5: with SPI on, the ST7735 driver couldn't claim GPIO9 (DC pin, also SPI0
-      MISO) - check when the Enviro+ is fitted (Pimoroni's Pi 5 notes)
+- [x] Enviro+ LCD on the Pi 5: `dtparam=spi=on` claimed GPIO9 (LCD DC pin, SPI0 MISO); fixed with
+      `dtoverlay=spi0-2cs,no_miso` (2026-11-08) - driver initialises; user to confirm the screen shows the IP
 - [x] Payload on battery power (2026-10-16): `usb_max_current_enable=1` set - without it the OAK reset every
       ~4 s (600 mA USB limit). Supply reads 4.96-4.99 V - turn the buck up to 5.1-5.2 V
 - [x] Starts on boot: systemd `payload.service` (`deploy/payload.service`)
+- [x] **SD card died 2026-11-08** (Pi fine; reflashed). App now writes nothing in normal running (user: a
+      display robot, no need to record sensor data): SQLite removed (sensor history = 10 min in RAM for the
+      graphs), logs memory-only (no `logs/egh455.log`), no "Targets:" print per poll, detector auto-save of
+      frames off unless `PAYLOAD_AUTOSAVE=1`. OS side (journal in RAM, zram swap only): docs/pi-setup.md
+      section 4. Rebuilt on the new card 2026-11-08 (hotspot, service, all of pi-setup.md): running, sensors
+      read, no `logs/` or `database/` created. Auto-login on (B4), passwordless sudo re-added by the user
 - [ ] Backup: Luxonis OAK Y-adapter (powers the OAK separately) - no AU stockist found; Luxonis shop / Arducam
 - [ ] Hotspot `Huntsman PL01` + captive portal (`deploy/hotspot`, written 2026-10-18): install on the Pi
       when it's back online; Huntsman `secrets.h` has it as `WIFI_SSID_2` - OTA flash pending (user present)
