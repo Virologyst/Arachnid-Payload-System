@@ -94,7 +94,7 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
 - [x] Enviro+ LCD on the Pi 5: `dtparam=spi=on` claimed GPIO9 (LCD DC pin, SPI0 MISO); fixed with
       `dtoverlay=spi0-2cs,no_miso` (2026-11-08) - driver initialises; user to confirm the screen shows the IP
 - [x] Payload on battery power (2026-10-16): `usb_max_current_enable=1` set - without it the OAK reset every
-      ~4 s (600 mA USB limit). Supply reads 4.96-4.99 V - turn the buck up to 5.1-5.2 V
+      ~4 s (600 mA USB limit). Supply reads 4.91-4.99 V (fixed - see the power line below)
 - [x] Starts on boot: systemd `payload.service` (`deploy/payload.service`)
 - [x] **SD card died 2026-11-08** (Pi fine; reflashed). App now writes nothing in normal running (user: a
       display robot, no need to record sensor data): SQLite removed (sensor history = 10 min in RAM for the
@@ -105,7 +105,11 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
 - [ ] Backup: Luxonis OAK Y-adapter (powers the OAK separately) - no AU stockist found; Luxonis shop / Arducam
 - [ ] Hotspot `Huntsman PL01` + captive portal (`deploy/hotspot`, written 2026-10-18): install on the Pi
       when it's back online; Huntsman `secrets.h` has it as `WIFI_SSID_2` - OTA flash pending (user present)
-- [ ] Payload power supply final build (5 V / 5 A buck from 18 V, set 5.1-5.2 V; Pi peak ~2.5 A + OAK ~1 A); mount on the robot
+- [ ] Payload power: a **100 W USB-C fast-charger module** off the 18 V battery (user, 2026-11-08) - output is
+      fixed, **not adjustable** (don't suggest turning it up). USB-PD gives at most 5 V / 3 A (Pi 5 wants
+      5.1 V / 5 A), so Pi peak ~2.5 A + OAK ~1 A can exceed it. Reads 4.91-4.93 V at idle, `throttled=0x0`.
+      If it browns out under load: shorter / 5 A-rated cable, a dedicated 5.1 V / 5 A supply, or the OAK
+      Y-adapter. Mount on the robot
 - [ ] Trim `requirements.txt` (currently a full system `pip freeze`)
 - [x] Robot control from the dashboard (arrow keys, stand/sit, stop) - fake-console tested 2026-10-16
 - [x] First drive of the real robot from the dashboard (2026-10-16, user): walk, back, turn left / right - each
@@ -119,4 +123,4 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
 
 ## Next step
 
-Buck voltage to 5.1-5.2 V; check video and detection while walking; Enviro+ when fitted.
+Check `vcgencmd get_throttled` / temps after a long run with the OAK detecting; check video and detection while walking.

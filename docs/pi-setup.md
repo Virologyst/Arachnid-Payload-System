@@ -75,7 +75,8 @@ undervoltage or overheating.
 **On battery (buck converter) power, `usb_max_current_enable=1` in `/boot/firmware/config.txt` is required**
 (set on this Pi 2026-10-16). A buck can't negotiate USB-PD, so the Pi assumes 3 A and limits USB to 600 mA
 total - the OAK then resets every few seconds (`X_LINK_ERROR` in the log, video stalls). Only set it if the
-supply really gives 5 A. Check: `vcgencmd pmic_read_adc EXT5V_V` - aim for 5.1 V under load (4.96 V seen).
+supply really gives 5 A. Check: `vcgencmd pmic_read_adc EXT5V_V` (4.91-4.99 V seen on the 100 W USB-C charger module, which is fixed -
+watch `get_throttled` under load instead).
 
 **Enviro+ LCD on the Pi 5:** the LCD's DC pin is GPIO9, which `dtparam=spi=on` claims as SPI0 MISO, so
 `st7735` can't take it and the LCD stays blank (`LCD init failed` in the log) while the I2C sensors work.
