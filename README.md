@@ -89,6 +89,7 @@ The server listens on port **8080**. Open `http://<pi-ip>:8080` in a browser. Th
 | GET | `/enviro` | Current Enviro+ readings (also added to the in-memory 10-minute history) |
 | GET | `/enviro/history` | Last 10 minutes of sensor readings |
 | POST | `/capture` | Save a still image |
+| POST | `/system/shutdown` | Stop the robot, then shut the Pi down cleanly (dashboard: ⏻ Shut down) |
 | GET | `/images` | List captured images |
 | GET | `/images/<filename>` | Fetch a captured image |
 | DELETE | `/images/delete/<filename>` | Delete a captured image |

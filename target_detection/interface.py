@@ -50,6 +50,10 @@ class Detection:
 AUTOSAVE = os.environ.get("PAYLOAD_AUTOSAVE", "0") == "1"
 AUTOSAVE_DIR = os.path.expanduser(os.environ.get("PAYLOAD_IMAGE_DIR", "~/DCIM"))
 
+# Video stream JPEG quality (OpenCV's default is 95). 70 is ~3x smaller per frame for little visible loss,
+# which matters on the 2.4 GHz hotspot: big frames queue up in the TCP buffers and the feed lags seconds.
+JPEG_QUALITY = int(os.environ.get("PAYLOAD_JPEG_QUALITY", "70"))
+
 def angle_to_bar(angle: float) -> float:
     pressure_map_slope = 0.035497786
     pressure_map_intercept = -1.433048
@@ -237,7 +241,7 @@ class TargetDetectionInterface:
         self.detection_list = []
 
     def _encode_np_bgr_to_mjpeg(self, np_bgr: np.ndarray) -> bytes:
-        (flag, encoded_image) = cv2.imencode(".jpg", np_bgr)
+        (flag, encoded_image) = cv2.imencode(".jpg", np_bgr, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
         if flag:
             return (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
 			bytearray(encoded_image) + b'\r\n')

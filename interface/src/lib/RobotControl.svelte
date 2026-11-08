@@ -64,6 +64,20 @@ This page will disconnect. ${how}.`)) return;
         }
     }
 
+    // Clean shutdown before the battery is cut - a power cut mid-write is what kills SD cards.
+    async function shutdownPi() {
+        if (!confirm(`Shut down the Pi (payload)?
+
+The robot is told to stop; it keeps its own power. Wait until the Pi's LED turns solid red (about 10 s) before cutting power. Turning it back on needs a power cycle.`)) return;
+        stop();
+        try {
+            const data = await (await fetch('/system/shutdown', { method: 'POST' })).json();
+            netMsg = data.ok ? 'Shutting down - wait for the Pi\'s LED to turn solid red, then cut power.' : data.error;
+        } catch (e) {
+            netMsg = `No reply from the payload: ${e}`;
+        }
+    }
+
     function setArmed(on) {
         release();
         post('/robot/arm', { armed: on });
@@ -154,6 +168,8 @@ This page will disconnect. ${how}.`)) return;
                     title="Switch the Pi and the robot between the home router and the payload hotspot">
                 {network === 'hotspot' ? 'Hotspot' : network === 'home' ? 'Router' : '…'} ⇄
             </button>
+            <button class="net-btn power-btn" on:click={shutdownPi}
+                    title="Shut the Pi down cleanly before cutting power">⏻ Shut down</button>
             <label class="arm">
                 <input type="checkbox" checked={state.armed} on:change={(e) => setArmed(e.target.checked)}>
                 Armed
@@ -212,6 +228,7 @@ This page will disconnect. ${how}.`)) return;
         background: transparent; color: #fff; cursor: pointer; font-size: 0.85rem;
     }
     .net-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .power-btn { border-color: #c0392b; }
     .net-msg { color: #f1c40f; font-size: 0.85rem; margin: 4px 0; }
     .arm { display: flex; gap: 6px; align-items: center; font-weight: bold; cursor: pointer; }
     .arm input { width: 18px; height: 18px; }

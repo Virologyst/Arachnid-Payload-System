@@ -209,16 +209,14 @@ print(f"Drill: {'enabled' if DRILL_ENABLED else 'disabled'}, auto: {'on' if DRIL
 
 # ──────────────── Get IP ────────────────
 def get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.settimeout(0)
+    """The Pi's IPv4 address. Read from the interfaces, not via a route to the internet, so the hotspot
+    address (10.42.0.1, no internet) shows too."""
     try:
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
+        out = subprocess.run(["hostname", "-I"], capture_output=True, text=True, timeout=2).stdout
+        ips = [a for a in out.split() if "." in a]   # IPv4 only
+        return ips[0] if ips else "No IP"
     except Exception:
-        ip = "No IP"
-    finally:
-        s.close()
-    return ip
+        return "No IP"
 
 # ──────────────── ENVIRO+ SENSORS AND LCD ────────────────
 
@@ -270,14 +268,24 @@ STATUS = {}                           # shown by /status (was an always-empty DB
 
 # ──────────────── TARGET DETECTION INTEGRATION (Oliver) ────────────────
 
+# Stream frame rate cap. The camera runs at 30 fps, but sending every frame to a phone on the 2.4 GHz
+# hotspot fills the TCP buffers faster than Wi-Fi drains them, so the feed lags seconds behind. A lower rate
+# keeps it live (and spares the CPU: each frame also runs ArUco detection and JPEG encoding).
+STREAM_FPS = float(os.environ.get("PAYLOAD_STREAM_FPS", "12"))
+
 def gen_frames():
-    """Generate MJPEG frames using the active detection system."""
+    """Generate MJPEG frames using the active detection system, at most STREAM_FPS."""
     global target_system
+    period = 1.0 / STREAM_FPS
+    next_t = time.monotonic()
     while True:
         target_system.wait_for_new_image(timeout=1.0)
+        now = time.monotonic()
+        if now < next_t:
+            time.sleep(next_t - now)
+        next_t = max(next_t + period, time.monotonic())
         frame_bytes = target_system.get_image_bytes()
         if frame_bytes:
-
             yield frame_bytes
 
 
@@ -493,9 +501,7 @@ def lcd_loop_thread():
                 # path = "test_image.jpg"
                 # det_img = Image.open(path)
                 detection = target_system.get_image_bytes(encode=False)  # -> np.ndarray (BGR)
-                if detection is None:
-                    print("No frame yet")
-                else:
+                if detection is not None:
                     # Show the camera frame
                     # detection is np.ndarray in BGR; convert to RGB and resize to LCD
                     rgb = cv2.cvtColor(detection, cv2.COLOR_BGR2RGB)
@@ -518,6 +524,10 @@ def lcd_loop_thread():
                 raw_temp = bme280.get_temperature()
                 data = raw_temp - ((avg_cpu_temp - raw_temp) / factor)
                 display_text(variables[mode], data, unit)
+
+            # The loop used to spin flat out (a whole CPU core, and the camera page competed with the video
+            # stream for frames). The IP / temperature pages only need a few refreshes a second.
+            time.sleep(0.2 if mode == MODE_DET else 0.5)
 
     except Exception as e:
         print(f"[LCD LOOP ERROR] {e}")
@@ -571,6 +581,21 @@ def network_mode() -> str:
     out = subprocess.run(["nmcli", "-t", "-f", "GENERAL.CONNECTION", "device", "show", "wlan0"],
                          capture_output=True, text=True).stdout
     return "hotspot" if "arachnid-hotspot" in out else "home"
+
+@app.route("/system/shutdown", methods=["POST"])
+def system_shutdown():
+    """Shut the Pi down cleanly, so the battery can be cut without corrupting the SD card. The robot is
+    told to stop first; it keeps its own power and pose."""
+    try:
+        robot.stop()
+    except Exception:
+        pass
+    def halt():
+        time.sleep(2)   # let this reply reach the browser first
+        subprocess.run(["sudo", "-n", "/usr/sbin/shutdown", "-h", "now"])
+    Thread(target=halt, daemon=True).start()
+    app.logger.info("System: shutting down (dashboard)")
+    return jsonify({"ok": True})
 
 @app.route("/network", methods=["GET", "POST"])
 def network():

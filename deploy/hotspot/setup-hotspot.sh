@@ -11,11 +11,19 @@ apt-get install -y -q dnsmasq-base nftables >/dev/null
 
 nmcli con delete "$CON" >/dev/null 2>&1 || true
 # 2.4 GHz only: the ESP32 can't see 5 GHz. Started by payload-wifi, not by NetworkManager autoconnect.
+# pmf disable = plain WPA2: otherwise NetworkManager adds WPA3 (SAE) / PMF, which the Pi 5's Wi-Fi handles
+# badly as an access point (clients see the network but can't join).
 nmcli con add type wifi ifname wlan0 con-name "$CON" autoconnect no ssid "$SSID" \
     802-11-wireless.mode ap 802-11-wireless.band bg 802-11-wireless.channel 6 \
     ipv4.method shared ipv4.addresses 10.42.0.1/24 ipv6.method disabled \
-    wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK" \
+    wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PSK" wifi-sec.pmf disable \
     wifi-sec.proto rsn wifi-sec.pairwise ccmp wifi-sec.group ccmp >/dev/null
+
+# Wi-Fi power saving off (2 = disable), on every connection: the Pi's Wi-Fi dozes between packets, which
+# adds lag to every dashboard request and to the video feed.
+mkdir -p /etc/NetworkManager/conf.d
+printf "[connection]\nwifi.powersave = 2\n" > /etc/NetworkManager/conf.d/arachnid-wifi-powersave.conf
+nmcli general reload conf 2>/dev/null || true
 
 mkdir -p /etc/NetworkManager/dnsmasq-shared.d
 install -m 644 "$HERE/captive-dnsmasq.conf" /etc/NetworkManager/dnsmasq-shared.d/arachnid-captive.conf

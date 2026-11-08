@@ -122,6 +122,11 @@ sudo bash deploy/hotspot/setup-hotspot.sh "Huntsman PL01" "<password>"
 Switch by hand: `payload-wifi hotspot` / `payload-wifi home` / `payload-wifi status` (switching drops SSH
 over the network you leave - join the other network to reconnect).
 
+The setup script also makes the hotspot plain WPA2 (`wifi-sec.pmf disable` - with NetworkManager's default
+WPA3/PMF the Pi 5's access point is unreliable) and turns Wi-Fi power saving off on every connection
+(`/etc/NetworkManager/conf.d/arachnid-wifi-powersave.conf`) - it added lag to every request. Tested on a
+phone 2026-11-08.
+
 **Captive portal:** on the hotspot every DNS name resolves to the Pi (`address=/#/10.42.0.1` in
 NetworkManager's shared dnsmasq) and Flask redirects any foreign hostname to the dashboard, so a phone or
 laptop that joins pops up "Sign in to network" showing the dashboard. The pop-up is a limited browser - use
@@ -189,6 +194,8 @@ The app starts without the OAK (dummy detections - a colour-cycling test image) 
 | `PAYLOAD_DRILL_AUTO` | `0` | `1` (with `PAYLOAD_DRILL=1`) = drill runs automatically when gauge pressure averages < 2 bar |
 | `PAYLOAD_IMAGE_DIR` | `~/DCIM` | where `/capture` (and auto-save) save images |
 | `PAYLOAD_AUTOSAVE` | `0` | `1` = the detector saves an annotated frame (max every 4 s) while anything is detected |
+| `PAYLOAD_STREAM_FPS` | `12` | video stream frame cap - higher lags on the hotspot |
+| `PAYLOAD_JPEG_QUALITY` | `70` | video stream JPEG quality (OpenCV default 95 = ~3x bigger frames) |
 | `PAYLOAD_ROBOT_HOST` | `huntsman.local` | robot console host (dashboard driving) |
 | `PAYLOAD_ROBOT_PORT` | `23` | robot console port |
 

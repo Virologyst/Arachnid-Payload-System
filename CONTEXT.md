@@ -103,8 +103,17 @@ LCD modes, image capture, the drill, logs and status; it serves the SvelteKit da
       section 4. Rebuilt on the new card 2026-11-08 (hotspot, service, all of pi-setup.md): running, sensors
       read, no `logs/` or `database/` created. Auto-login on (B4), passwordless sudo re-added by the user
 - [ ] Backup: Luxonis OAK Y-adapter (powers the OAK separately) - no AU stockist found; Luxonis shop / Arducam
-- [ ] Hotspot `Huntsman PL01` + captive portal (`deploy/hotspot`, written 2026-10-18): install on the Pi
-      when it's back online; Huntsman `secrets.h` has it as `WIFI_SSID_2` - OTA flash pending (user present)
+- [x] Hotspot `Huntsman PL01` + captive portal: installed and **tested by the user on a phone 2026-11-08**.
+      Needed `wifi-sec.pmf disable` (NetworkManager added WPA3/PMF, which the Pi 5 AP handles badly) and Wi-Fi
+      power save off (NM `wifi.powersave = 2`) - both in `setup-hotspot.sh` now
+- [x] Hotspot speed-ups (2026-11-08, user: slow, video 5-10 s behind): stream capped at 12 fps
+      (`PAYLOAD_STREAM_FPS`) and JPEG quality 70 (`PAYLOAD_JPEG_QUALITY`) - ~0.7 MB/s, was ~3; the LCD loop
+      spun flat out (a whole core) - now sleeps 0.2-0.5 s; LCD IP read from the interfaces (`hostname -I`), so
+      the hotspot's 10.42.0.1 shows (it used a route to 8.8.8.8, which the hotspot doesn't have)
+- [x] Dashboard **⏻ Shut down** button (`/system/shutdown`, 2026-11-08): stops the robot, then `shutdown -h`;
+      cut power once the Pi's LED is solid red. Deployed, not yet pressed
+- [x] Stress test 2026-11-08 (OAK detecting, Enviro+, video): SoC levels at ~48-50 C with the fan, no
+      throttling, 4.87-4.92 V on the USB-C charger
 - [ ] Payload power: a **100 W USB-C fast-charger module** off the 18 V battery (user, 2026-11-08) - output is
       fixed, **not adjustable** (don't suggest turning it up). USB-PD gives at most 5 V / 3 A (Pi 5 wants
       5.1 V / 5 A), so Pi peak ~2.5 A + OAK ~1 A can exceed it. Reads 4.91-4.93 V at idle, `throttled=0x0`.
